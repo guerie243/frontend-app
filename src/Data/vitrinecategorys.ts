@@ -23,6 +23,26 @@ export const CATEGORIES_VITRINE: CategoryAnnonce[] = [
         imageUri: 'https://via.placeholder.com/150/0000FF/FFFFFF?text=All'
     },
     {
+        name: 'Boutique',
+        slug: 'Boutique',
+        imageUri: 'https://via.placeholder.com/150/FF69B4/FFFFFF?text=Boutique'
+    },
+    {
+        name: 'Restaurant',
+        slug: 'Restaurant',
+        imageUri: 'https://via.placeholder.com/150/FFA500/FFFFFF?text=Resto'
+    },
+    {
+        name: 'Hôtel',
+        slug: 'Hôtel',
+        imageUri: 'https://via.placeholder.com/150/800080/FFFFFF?text=Hotel'
+    },
+    {
+        name: 'Services',
+        slug: 'Services',
+        imageUri: 'https://via.placeholder.com/150/00FFFF/000000?text=Service'
+    },
+    {
         name: 'Mode',
         slug: 'Mode',
         imageUri: 'https://via.placeholder.com/150/FF0000/FFFFFF?text=Mode'
@@ -42,10 +62,4 @@ export const CATEGORIES_VITRINE: CategoryAnnonce[] = [
         slug: 'Sports',
         imageUri: 'https://via.placeholder.com/150/FF00FF/FFFFFF?text=Sport'
     },
-    {
-        name: 'Services',
-        slug: 'Services',
-        imageUri: 'https://via.placeholder.com/150/00FFFF/000000?text=Service'
-    },
-
 ];

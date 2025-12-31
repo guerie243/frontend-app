@@ -10,6 +10,7 @@ import { useVitrines } from '../hooks/useVitrines';
 import { Ionicons } from '@expo/vector-icons';
 import { getRelativeTime } from '../utils/dateUtils';
 import { ENV } from '../config/env';
+import { DEFAULT_IMAGES } from '../constants/images';
 
 // Dimensions
 const { width } = Dimensions.get('window');
@@ -53,7 +54,7 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
                     if (vitrineData && isMounted) {
                         setVitrineInfo({
                             name: vitrineData.name || 'Vitrine Pro',
-                            logoUri: vitrineData.logo || vitrineData.avatar || 'https://via.placeholder.com/40',
+                            logoUri: vitrineData.logo || vitrineData.avatar || DEFAULT_IMAGES.avatar,
                             contactPhone: vitrineData.contact?.phone || '',
                         });
                     }

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { View, Image, StyleSheet, Pressable, Modal, ActivityIndicator, Animated, Easing } from "react-native";
 
-// Nouvelle image par défaut en ligne
-const DefaultAvatar = { uri: "https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png" };
+import { DEFAULT_IMAGES } from "../constants/images";
 
 export default function Avatar({
   size = 80,
@@ -48,7 +47,7 @@ export default function Avatar({
           ]}
         >
           <Image
-            source={hasImage ? source : DefaultAvatar}
+            source={hasImage ? source : DEFAULT_IMAGES.avatar}
             style={{ width: "100%", height: "100%", resizeMode: "cover" }}
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => setLoading(false)}
@@ -67,7 +66,7 @@ export default function Avatar({
         <View style={styles.modalBackground}>
           <Pressable style={styles.closeArea} onPress={() => setVisible(false)} />
           <Animated.Image
-            source={hasImage ? source : DefaultAvatar}
+            source={hasImage ? source : DEFAULT_IMAGES.avatar}
             style={[
               styles.fullImage,
               {

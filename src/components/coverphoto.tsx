@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { View, Image, StyleSheet, Pressable, Modal, ActivityIndicator, Animated, Easing } from "react-native";
 
-// Image par défaut
-import DefaultCover from "../assets/default_cover.jpeg"; // mets ton image ici
+import { DEFAULT_IMAGES } from "../constants/images";
 
 export default function CoverPhoto({
   width = "100%",         // largeur par défaut (pleine largeur)
@@ -42,7 +41,7 @@ export default function CoverPhoto({
           ]}
         >
           <Image
-            source={hasImage ? source : DefaultCover}
+            source={hasImage ? source : DEFAULT_IMAGES.cover}
             style={{ width: "100%", height: "100%", resizeMode: "cover" }}
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => setLoading(false)}

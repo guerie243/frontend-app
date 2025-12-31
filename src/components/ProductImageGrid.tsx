@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Image, StyleSheet, Dimensions, Text, TouchableOpacity, Animated, Easing } from 'react-native';
+import { DEFAULT_IMAGES } from '../constants/images';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAX_GRID_HEIGHT = 600;
@@ -83,7 +84,7 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
         return (
             <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.placeholderContainer}>
                 <Image
-                    source={require('../../assets/images/placeholder.png')}
+                    source={DEFAULT_IMAGES.annonce}
                     style={styles.placeholderImage}
                     resizeMode="contain"
                 />

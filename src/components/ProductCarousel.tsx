@@ -1,12 +1,13 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  Animated, 
-  Image, 
+import {
+  View,
+  StyleSheet,
+  Animated,
+  Image,
   Dimensions,
   ScrollView // Nécessaire pour les types et Animated.ScrollView
 } from 'react-native';
+import { DEFAULT_IMAGES } from '../constants/images';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -68,9 +69,9 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
       // Utilise les offsets calculés pour le scrollTo
       const nextOffset = snapToOffsets[nextIndex] || 0;
 
-      scrollRef.current?.scrollTo({ 
-          x: nextOffset, 
-          animated: true 
+      scrollRef.current?.scrollTo({
+        x: nextOffset,
+        animated: true
       });
       setCurrentIndex(nextIndex);
     }, 5000);
@@ -81,19 +82,19 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
   // Fonction appelée à la fin d'un défilement manuel
   const handleMomentumScrollEnd = (event: any) => {
     const scrollOffset = event.nativeEvent.contentOffset.x;
-    
+
     // Le calcul de l'index doit être basé sur les offsets pour la précision.
     // Pour simplifier, on divise par la largeur totale d'un bloc (item + espacement).
     const index = Math.round(scrollOffset / (ITEM_WIDTH + SPACING));
     setCurrentIndex(index);
   };
-  
+
   if (imageCount === 0) {
     // Rendu du placeholder inchangé
     return (
       <Animated.View style={{ height, backgroundColor: '#EFEFEF', justifyContent: 'center', alignItems: 'center' }}>
         <Image
-          source={require('../../assets/images/placeholder.png')}
+          source={DEFAULT_IMAGES.annonce}
           style={{ width: SCREEN_WIDTH, height: '100%' }}
           resizeMode="contain"
         />
@@ -108,13 +109,13 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
         ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        
+
         // ⭐️ CRITIQUE : Utilisation de snapToOffsets pour le centrage parfait
         decelerationRate="fast"
         snapToOffsets={snapToOffsets}
         // Le padding horizontal assure que la première et dernière image est centrée
         contentContainerStyle={{ paddingHorizontal: SPACING }}
-        
+
         scrollEventThrottle={16}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
@@ -125,27 +126,27 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
         {normalizedImages.map((image, index) => {
           const imageUri = image.uri;
           const source = imageErrors.has(index)
-            ? require('../../assets/images/placeholder.png')
+            ? DEFAULT_IMAGES.annonce
             : { uri: imageUri };
 
           return (
             // La marge à droite est l'espacement entre les items.
-            <View 
-                key={index} 
-                style={[
-                    styles.slide, 
-                    { 
-                        width: ITEM_WIDTH, 
-                        marginRight: index < imageCount - 1 ? SPACING : 0 
-                    }
-                ]}
+            <View
+              key={index}
+              style={[
+                styles.slide,
+                {
+                  width: ITEM_WIDTH,
+                  marginRight: index < imageCount - 1 ? SPACING : 0
+                }
+              ]}
             >
               <Image
                 source={source}
                 style={styles.image}
                 resizeMode="contain"
                 onError={() => {
-                   setImageErrors(prev => new Set(prev).add(index));
+                  setImageErrors(prev => new Set(prev).add(index));
                 }}
               />
             </View>
@@ -159,16 +160,16 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
           {normalizedImages.map((_, i) => {
             const opacity = currentIndex === i ? 1 : 0.4;
             const scale = currentIndex === i ? 1.4 : 0.8;
-            
+
             return (
               <View
                 key={i}
                 style={[
-                  styles.dot, 
-                  { 
-                      opacity,
-                      transform: [{ scale }],
-                      backgroundColor: currentIndex === i ? '#FFFFFF' : '#FFFFFF',
+                  styles.dot,
+                  {
+                    opacity,
+                    transform: [{ scale }],
+                    backgroundColor: currentIndex === i ? '#FFFFFF' : '#FFFFFF',
                   }
                 ]}
               />
@@ -182,7 +183,7 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
 
 const styles = StyleSheet.create({
   slide: {
-    flex: 1, 
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',

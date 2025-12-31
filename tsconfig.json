@@ -11,7 +11,7 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-, "src/config/cloudinaryConfig.js", "src/utils/imageUploader.js"  ]
+    "src/config/cloudinaryConfig.js",
+    "src/utils/imageUploader.js"
+  ]
 }
