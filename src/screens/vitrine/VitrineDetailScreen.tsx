@@ -1,0 +1,632 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+    RefreshControl,
+    FlatList,
+    ActivityIndicator,
+    Dimensions,
+    Alert,
+    Platform
+} from 'react-native';
+import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
+import { ScreenWrapper } from '../../components/ScreenWrapper';
+import { GuestPrompt } from '../../components/GuestPrompt';
+import { CustomButton } from '../../components/CustomButton';
+import { useTheme } from '../../context/ThemeContext';
+import { useVitrines } from '../../hooks/useVitrines';
+import { ShareButton } from '../../components/ShareButton';
+import { WhatsAppButton } from '../../components/WhatsAppButton';
+import ImageUploadCover from "../../components/ImageUploadCover";
+import ImageUploadAvatar from "../../components/ImageUploadAvatar";
+import { Ionicons } from '@expo/vector-icons';
+import { LoadingComponent } from '../../components/LoadingComponent';
+import { StateMessage } from '../../components/StateMessage';
+import { useAuth } from '../../hooks/useAuth';
+import { useAnnonces } from '../../hooks/useAnnonces';
+import { AnnonceCard } from '../../components/AnnonceCard';
+import { ENV } from '../../config/env';
+import { ImagePreviewModal } from '../../components/ImagePreviewModal';
+
+// Helper pour sécuriser les sources d'images
+const getSafeUri = (source: any): string | undefined => {
+    if (!source) return undefined;
+    if (typeof source === 'string') return source;
+    if (source.uri) return source.uri;
+    if (source.url) return source.url;
+    if (Array.isArray(source) && source.length > 0) return getSafeUri(source[0]);
+    return undefined;
+};
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+export const VitrineDetailScreen = () => {
+    const navigation = useNavigation<any>();
+    const route = useRoute<any>();
+    const { slug } = route.params || {};
+    const { theme } = useTheme();
+    const {
+        fetchVitrineBySlug,
+        updateVitrine,
+        fetchMyVitrines,
+        isLoading: isVitrinesLoading,
+    } = useVitrines();
+
+    const { user, isAuthenticated, isGuest } = useAuth();
+    const { annonces, fetchAnnoncesByVitrine, isLoading: annoncesLoading, hasMore } = useAnnonces();
+    const [page, setPage] = useState(1);
+    const [error, setError] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
+    const [displayedVitrine, setDisplayedVitrine] = useState<any>(null);
+    const [previewImage, setPreviewImage] = useState<{ visible: boolean; url?: string }>({
+        visible: false,
+        url: undefined
+    });
+
+    // --- Identification du Propriétaire ---
+    // On compare l'ID utilisateur (si connecté) avec l'ownerId de la vitrine
+    const currentUserId = user?.userId || user?.id || user?._id;
+    const isOwner = isAuthenticated && displayedVitrine && String(currentUserId) === String(displayedVitrine.ownerId);
+
+    // --- LOGIQUE REFRESH ---
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        try {
+            const targetSlug = slug || displayedVitrine?.slug;
+            if (targetSlug) {
+                const refreshedVitrine = await fetchVitrineBySlug(targetSlug);
+                setDisplayedVitrine(refreshedVitrine);
+                setPage(1);
+                fetchAnnoncesByVitrine(targetSlug, 1, 10);
+            } else if (isAuthenticated && !slug) {
+                // Refresh sans slug = re-fetch my vitrine
+                const myVitrines = await fetchMyVitrines();
+                if (myVitrines && myVitrines.length > 0) {
+                    setDisplayedVitrine(myVitrines[0]);
+                    setPage(1);
+                    fetchAnnoncesByVitrine(myVitrines[0].slug, 1, 10);
+                }
+            }
+        } catch (error) {
+            console.error("Erreur refresh vitrine:", error);
+            setError("Erreur lors du rafraîchissement.");
+        } finally {
+            setRefreshing(false);
+        }
+    }, [slug, displayedVitrine?.slug, fetchVitrineBySlug, fetchAnnoncesByVitrine, isAuthenticated, fetchMyVitrines]);
+
+    // Charger les donées
+    useEffect(() => {
+        const loadVitrine = async () => {
+            if (slug) {
+                // Mode normal : via navigation avec slug
+                const vitrine = await fetchVitrineBySlug(slug);
+                setDisplayedVitrine(vitrine);
+                if (vitrine) {
+                    setPage(1);
+                    fetchAnnoncesByVitrine(vitrine.slug, 1, 10);
+                }
+            } else if (isAuthenticated) {
+                // Mode "Tab" : pas de slug, on charge la vitrine de l'utilisateur
+                try {
+                    const myVitrines = await fetchMyVitrines();
+                    if (myVitrines && myVitrines.length > 0) {
+                        const myVitrine = myVitrines[0];
+                        setDisplayedVitrine(myVitrine);
+                        setPage(1);
+                        fetchAnnoncesByVitrine(myVitrine.slug, 1, 10);
+                    } else {
+                        // Pas de vitrine
+                        setDisplayedVitrine(null);
+                    }
+                } catch (e) {
+                    console.error("Erreur chargement ma vitrine", e);
+                }
+            }
+        };
+        loadVitrine();
+    }, [slug, isAuthenticated]); // Ajout dépendance isAuthenticated
+
+    const loadMoreAnnonces = () => {
+        if (!annoncesLoading && hasMore && displayedVitrine?.slug) {
+            const nextPage = page + 1;
+            setPage(nextPage);
+            fetchAnnoncesByVitrine(displayedVitrine.slug, nextPage, 10);
+        }
+    };
+
+    // --- Gestion des Uploads (Propriétaire uniquement) ---
+    const handleAvatarUploadSuccess = async (newImageUrl: string) => {
+        try {
+            await updateVitrine(displayedVitrine.slug, { logo: newImageUrl });
+            setDisplayedVitrine((prev: any) => ({ ...prev, logo: newImageUrl }));
+            Alert.alert("Succès", "Le logo a été mis à jour !");
+        } catch (error) {
+            console.error("Erreur mise à jour logo:", error);
+            Alert.alert("Erreur", "Échec de la sauvegarde du logo.");
+        }
+    };
+
+    const handleCoverUploadSuccess = async (newImageUrl: string) => {
+        try {
+            await updateVitrine(displayedVitrine.slug, { coverImage: newImageUrl });
+            setDisplayedVitrine((prev: any) => ({ ...prev, coverImage: newImageUrl }));
+            Alert.alert("Succès", "La bannière a été mise à jour !");
+        } catch (error) {
+            console.error("Erreur mise à jour bannière:", error);
+            Alert.alert("Erreur", "Échec de la sauvegarde de la bannière.");
+        }
+    };
+
+    // --- Chargement / Erreurs ---
+    if (isVitrinesLoading && !displayedVitrine) {
+        return <LoadingComponent />;
+    }
+
+    if (!displayedVitrine) {
+        // Si c'est un guest sur l'onglet "Ma Vitrine" (pas de slug)
+        if (isGuest && !slug) {
+            return (
+                <ScreenWrapper>
+                    <View style={{
+                        flexDirection: 'row',
+                        justifyContent: 'flex-end',
+                        paddingHorizontal: 16,
+                        paddingTop: 10,
+                        marginBottom: 20
+                    }}>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('Settings')}
+                            style={{
+                                padding: 8,
+                                borderRadius: 20,
+                                backgroundColor: theme.colors.border + '40'
+                            }}
+                        >
+                            <Ionicons name="settings-outline" size={24} color={theme.colors.text} />
+                        </TouchableOpacity>
+                    </View>
+                    <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20, marginTop: -120 }}>
+                        <GuestPrompt message="Connectez-vous pour voir votre vitrine" variant="card" />
+                    </View>
+                </ScreenWrapper>
+            );
+        }
+
+        return (
+            <ScreenWrapper>
+                <StateMessage
+                    type="no-results"
+                    message="Désolé, cette vitrine semble ne pas exister ou a été supprimée."
+                    onRetry={() => navigation.goBack()}
+                    icon="arrow-back-outline"
+                />
+            </ScreenWrapper>
+        );
+    }
+
+    const currentVitrine = displayedVitrine;
+    const pagePath = `v/${currentVitrine.slug}`;
+    const fullUrl = `${ENV.SHARE_BASE_URL}/${pagePath}`;
+
+    const shareData = {
+        title: `Vitrine de ${currentVitrine.name}`,
+        vitrineName: currentVitrine.name,
+    };
+
+    const whatsappMessage =
+        `Bonjour ${currentVitrine.name || ''}, je visite votre vitrine sur l'application.\n` +
+        `J'aimerais avoir plus d'informations.\n\n` +
+        `Lien de la vitrine : ${fullUrl}`;
+
+    // --- Header (Partie commune + conditionnelle) ---
+    const ListHeader = () => (
+        <>
+            {/* 1. Cover & Avatar */}
+            <View style={styles.coverSection}>
+                {isOwner ? (
+                    // OWNER: Uploaders
+                    <ImageUploadCover
+                        initialImage={currentVitrine.banner || currentVitrine.coverImage}
+                        height={200}
+                        uploadFolderPath="vitrine_covers/"
+                        onUploadSuccess={handleCoverUploadSuccess}
+                        onImagePress={(url) => setPreviewImage({ visible: true, url })}
+                    />
+                ) : (
+                    // VISITOR: Simple Image (Decreased height by 1/4: 200 -> 150)
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={() => setPreviewImage({
+                            visible: true,
+                            url: getSafeUri(currentVitrine.coverImage || currentVitrine.banner)
+                        })}
+                    >
+                        <Image
+                            source={{ uri: getSafeUri(currentVitrine.coverImage || currentVitrine.banner) }}
+                            style={[styles.coverImage, { height: 200 }]}
+                            resizeMode="cover"
+                        />
+                    </TouchableOpacity>
+                )}
+
+                <View style={[
+                    styles.avatarSection,
+                    { borderColor: theme.colors.surface },
+                    !isOwner && { bottom: -60 }
+                ]}>
+                    {isOwner ? (
+                        // OWNER: Avatar Uploader
+                        <ImageUploadAvatar
+                            initialImage={currentVitrine.logo || currentVitrine.avatar}
+                            size={140}
+                            uploadFolderPath="vitrine_logos/"
+                            onUploadSuccess={handleAvatarUploadSuccess}
+                            onImagePress={(url) => setPreviewImage({ visible: true, url })}
+                        />
+                    ) : (
+                        // VISITOR: Simple Avatar (Increased size: 80 -> 120)
+                        <TouchableOpacity
+                            activeOpacity={0.9}
+                            onPress={() => setPreviewImage({
+                                visible: true,
+                                url: getSafeUri(currentVitrine.logo || currentVitrine.avatar)
+                            })}
+                        >
+                            <Image
+                                source={{ uri: getSafeUri(currentVitrine.logo || currentVitrine.avatar) }}
+                                style={[
+                                    styles.avatar,
+                                    {
+                                        borderColor: theme.colors.surface,
+                                        width: 120,
+                                        height: 120,
+                                        borderRadius: 60
+                                    }
+                                ]}
+                            />
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* 1.3. Header Actions */}
+                <View style={[styles.floatingHeader, { justifyContent: 'flex-end' }]}>
+                    {/* OWNER ONLY: Settings Button */}
+                    {isOwner && (
+                        <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={[styles.actionButton, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
+                            <Ionicons name="settings-outline" size={24} color={theme.colors.surface} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+
+            {/* 2. Bloc Info */}
+            <View style={styles.infoBlock}>
+                <Text style={[styles.title, { color: theme.colors.text }]}>{currentVitrine.name}</Text>
+                <Text style={[styles.category, { color: theme.colors.primary, marginBottom: 8 }]}>{currentVitrine.category || currentVitrine.type}</Text>
+
+                <Text style={[styles.slug, { color: theme.colors.textTertiary, marginBottom: currentVitrine.description ? 16 : 24 }]}>
+                    {currentVitrine.slug}
+                </Text>
+
+                {currentVitrine.description && (
+                    <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{currentVitrine.description}</Text>
+                )}
+
+                <View style={[styles.separator, { backgroundColor: theme.colors.border }]} />
+
+                {/* Contact Info */}
+                {(currentVitrine.address || currentVitrine.contact?.email || currentVitrine.contact?.phone) && (
+                    <View style={styles.contactDetailsSection}>
+                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Informations de Contact</Text>
+
+                        {currentVitrine.address && (
+                            <View style={styles.infoItem}>
+                                <Ionicons name="location-outline" size={20} color={theme.colors.textSecondary} style={styles.infoIcon} />
+                                <View style={styles.infoContent}>
+                                    <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Adresse</Text>
+                                    <Text style={[styles.infoValue, { color: theme.colors.text }]}>{currentVitrine.address}</Text>
+                                </View>
+                            </View>
+                        )}
+                        {currentVitrine.contact?.email && (
+                            <View style={styles.infoItem}>
+                                <Ionicons name="mail-outline" size={20} color={theme.colors.textSecondary} style={styles.infoIcon} />
+                                <View style={styles.infoContent}>
+                                    <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Email</Text>
+                                    <Text style={[styles.infoValue, { color: theme.colors.text }]}>{currentVitrine.contact.email}</Text>
+                                </View>
+                            </View>
+                        )}
+                        {currentVitrine.contact?.phone && (
+                            <View style={styles.infoItem}>
+                                <Ionicons name="call-outline" size={20} color={theme.colors.textSecondary} style={styles.infoIcon} />
+                                <View style={styles.infoContent}>
+                                    <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Téléphone</Text>
+                                    <Text style={[styles.infoValue, { color: theme.colors.text }]}>{currentVitrine.contact.phone}</Text>
+                                </View>
+                            </View>
+                        )}
+                    </View>
+                )}
+
+                {/* Actions Principales (Différenciées Owner/Visitor) */}
+                <View style={[styles.mainActionsContainer]}>
+                    {isOwner ? (
+                        // --- OWNER ACTIONS ---
+                        <>
+                            <CustomButton
+                                title="Gérer ma Vitrine"
+                                onPress={() => navigation.navigate('VitrineModificationMain')}
+                                style={styles.ownerActionButton}
+                            />
+                            {/* ShareButton Owner */}
+                            <View style={[styles.shareRectButton, { borderColor: theme.colors.border, flex: 1 }]}>
+                                <ShareButton
+                                    pagePath={pagePath}
+                                    shareData={shareData}
+                                    size={20}
+                                    color={theme.colors.primary}
+                                >
+                                    <Text style={[styles.shareBtnText, { color: theme.colors.primary }]}>Partager</Text>
+                                </ShareButton>
+                            </View>
+                        </>
+                    ) : (
+                        // --- VISITOR ACTIONS ---
+                        <>
+                            {currentVitrine.contact?.phone ? (
+                                <WhatsAppButton
+                                    phoneNumber={currentVitrine.contact.phone}
+                                    message={whatsappMessage}
+                                    style={styles.visitorActionButton}
+                                />
+                            ) : (
+                                <View style={{ flex: 1, marginRight: 16 }}>
+                                    <Text style={{ color: theme.colors.textSecondary, fontStyle: 'italic' }}>Aucun contact WhatsApp</Text>
+                                </View>
+                            )}
+
+                            <View style={[styles.shareRectButton, { borderColor: '#007AFF', flex: 1 }]}>
+                                <ShareButton
+                                    pagePath={pagePath}
+                                    shareData={shareData}
+                                    size={20}
+                                    color={theme.colors.primary}
+                                >
+                                    <Text style={[styles.shareBtnText, { color: theme.colors.primary }]}>Partager</Text>
+                                </ShareButton>
+                            </View>
+                        </>
+                    )}
+                </View>
+            </View>
+
+            {/* 3. Produits Header */}
+            <View style={[styles.productsHeader, { borderTopColor: theme.colors.border, borderTopWidth: 1 }]}>
+                <Text style={[styles.productsTitle, { color: theme.colors.text }]}>Annonces ({annonces.length})</Text>
+            </View>
+        </>
+    );
+
+    return (
+        <ScreenWrapper>
+            <FlatList
+                data={annonces}
+                renderItem={({ item }) => (
+                    <View style={{ width: (SCREEN_WIDTH / 2) - 24, marginBottom: 16 }}>
+                        <AnnonceCard
+                            annonce={item}
+                            // Important : on passe le slug de l'annonce pour la navigation
+                            onPress={() => navigation.push('AnnonceDetail', { slug: item.slug })}
+                        />
+                    </View>
+                )}
+                keyExtractor={(item) => item.slug}
+                numColumns={2}
+                columnWrapperStyle={styles.columnWrapper}
+                contentContainerStyle={styles.content}
+                ListHeaderComponent={ListHeader}
+                ListEmptyComponent={
+                    annoncesLoading ? (
+                        <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                            <ActivityIndicator size="large" color={theme.colors.primary} />
+                            <Text style={{ marginTop: 16, color: theme.colors.textSecondary, fontSize: 14 }}>
+                                Chargement des annonces...
+                            </Text>
+                        </View>
+                    ) : (
+                        <StateMessage
+                            type="empty"
+                            message={isOwner
+                                ? "Vous n'avez pas encore d'annonces. Donnez vie à votre vitrine en publiant votre premier article !"
+                                : "Cette vitrine n'a pas encore d'annonces disponibles."}
+                        />
+                    )
+                }
+                ListFooterComponent={
+                    annoncesLoading && annonces.length > 0 ? (
+                        <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginVertical: 16 }} />
+                    ) : null
+                }
+                onEndReached={loadMoreAnnonces}
+                onEndReachedThreshold={0.5}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                }
+            />
+            {/* Prompt pour Guests si ce n'est pas le proprio et qu'ils sont invités */}
+            {isGuest && (
+                <View style={styles.guestPromptContainer}>
+                    {/* Message enlevé selon demande utilisateur */}
+                </View>
+            )}
+
+            <ImagePreviewModal
+                visible={previewImage.visible}
+                imageUrl={previewImage.url}
+                onClose={() => setPreviewImage({ ...previewImage, visible: false })}
+            />
+        </ScreenWrapper>
+    );
+};
+
+const styles = StyleSheet.create({
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    content: { paddingBottom: 40 },
+    coverSection: {
+        marginBottom: 60,
+        width: '100%',
+    },
+    coverImage: {
+        width: '100%',
+        height: 200,
+        backgroundColor: '#EFEFEF',
+    },
+    floatingHeader: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        zIndex: 20,
+    },
+    actionButton: {
+        padding: 8,
+        borderRadius: 20,
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarSection: {
+        position: "absolute",
+        bottom: -70,
+        left: 10,
+        zIndex: 15,
+    },
+    avatar: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        borderWidth: 3,
+    },
+    infoBlock: {
+        paddingHorizontal: 16,
+        marginTop: 0,
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: '800',
+        marginTop: 2,
+        marginBottom: 2
+    },
+    slug: {
+        fontSize: 12,
+        marginBottom: 2,
+        fontWeight: '500',
+    },
+    category: {
+        fontSize: 12,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    description: {
+        fontSize: 14,
+        marginBottom: 16,
+        lineHeight: 20,
+    },
+    separator: {
+        height: 1,
+        width: '100%',
+        marginVertical: 16,
+    },
+    contactDetailsSection: {
+        marginBottom: 20
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        marginBottom: 12
+    },
+    infoItem: {
+        flexDirection: 'row',
+        marginBottom: 8,
+        alignItems: 'center',
+    },
+    infoIcon: {
+        marginRight: 12,
+    },
+    infoContent: {
+        flex: 1
+    },
+    infoLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+        marginBottom: 1,
+        textTransform: 'uppercase'
+    },
+    infoValue: {
+        fontSize: 14,
+        lineHeight: 18
+    },
+    mainActionsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        marginBottom: 24,
+    },
+    ownerActionButton: {
+        flex: 1.5,
+        marginRight: 12,
+    },
+    visitorActionButton: {
+        flex: 1,
+        marginRight: 16,
+    },
+    shareRectButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderRadius: 8,
+        height: 50,
+        paddingHorizontal: 16,
+    },
+    shareBtnText: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
+    },
+    productsHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+    },
+    productsTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+    },
+    columnWrapper: {
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+    },
+    placeholderText: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginTop: 24,
+        width: '100%'
+    },
+    guestPromptContainer: {
+        padding: 16
+    }
+});

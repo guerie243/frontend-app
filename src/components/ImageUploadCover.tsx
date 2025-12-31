@@ -1,0 +1,176 @@
+import React, { useState } from 'react';
+import {
+  TouchableOpacity,
+  View,
+  Image,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Modal,
+  Animated,
+  Easing,
+  Pressable,
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { MaterialIcons } from '@expo/vector-icons';
+import { compressImage } from '../utils/imageUploader';
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
+const DefaultCover = { uri: "https://via.placeholder.com/600x200?text=Cover+Image" };
+
+const ImageUploadCover = ({
+  initialImage,
+  onUploadSuccess,
+  onImagePress,
+  height = 130
+}: {
+  initialImage?: string;
+  onUploadSuccess?: (uri: string) => void;
+  onImagePress?: (url: string) => void;
+  height?: number;
+}) => {
+  const [loading, setLoading] = useState(false);
+  const [imageUri, setImageUri] = useState(initialImage);
+
+  // LOGIQUE MODALE
+  const [modalVisible, setModalVisible] = useState(false);
+  const [scale] = useState(new Animated.Value(0));
+
+  const hasImage = !!imageUri;
+
+  const openModal = () => {
+    if (onImagePress && hasImage) {
+      onImagePress(imageUri || initialImage || '');
+      return;
+    }
+    if (hasImage) {
+      setModalVisible(true);
+      scale.setValue(0);
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 250,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+
+  const handleImagePick = async () => {
+    let pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (pickerResult.canceled) return;
+    const localImageUri = pickerResult.assets[0].uri;
+    setImageUri(localImageUri);
+
+    try {
+      setLoading(true);
+      const compressedUri = await compressImage(localImageUri);
+
+      if (onUploadSuccess) {
+        onUploadSuccess(compressedUri);
+      }
+
+    } catch (error) {
+      Alert.alert("Erreur", "Impossible de traiter l'image de couverture.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <View style={[styles.container, { height }]}>
+        <Pressable onPress={openModal} style={styles.content}>
+          <Image
+            source={{ uri: imageUri || DefaultCover.uri }}
+            style={[styles.coverImage, { height }]}
+            resizeMode="cover"
+          />
+          {loading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
+          )}
+        </Pressable>
+
+        <TouchableOpacity
+          onPress={handleImagePick}
+          style={styles.addIconContainer}
+          disabled={loading}
+        >
+          <MaterialIcons name="photo-camera" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      <Modal visible={modalVisible} transparent onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalBackground}>
+          <Pressable style={styles.closeArea} onPress={() => setModalVisible(false)} />
+          <Animated.Image
+            source={{ uri: imageUri || DefaultCover.uri }}
+            style={[
+              styles.fullImage,
+              {
+                width: SCREEN_WIDTH * 0.9,
+                height: height * 3,
+                transform: [{ scale }],
+              },
+            ]}
+          />
+        </View>
+      </Modal>
+    </>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+    backgroundColor: "#eee",
+    position: "relative",
+    overflow: "hidden",
+  },
+  content: {
+    flex: 1,
+  },
+  coverImage: {
+    width: "100%",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  addIconContainer: {
+    position: "absolute",
+    right: 20,
+    bottom: 20,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    padding: 10,
+    borderRadius: 999,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    borderRadius: 8,
+    resizeMode: "contain",
+  },
+  closeArea: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+});
+
+export default ImageUploadCover;

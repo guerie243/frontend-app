@@ -1,0 +1,255 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { ScreenWrapper } from '../../components/ScreenWrapper';
+import { CustomButton } from '../../components/CustomButton';
+import { useTheme } from '../../context/ThemeContext';
+import { useUserStore } from '../../store/useUserStore';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../hooks/useAuth';
+import { TouchableOpacity } from 'react-native';
+import api from '../../services/api';
+
+export const ProfileDetailScreen = () => {
+    const navigation = useNavigation<any>();
+    const { theme } = useTheme();
+    const { user, fetchUser, isLoading } = useUserStore();
+    const { isAuthenticated, logout } = useAuth();
+
+    const [refreshing, setRefreshing] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [password, setPassword] = useState('');
+
+    const onRefresh = async () => {
+        setRefreshing(true);
+        try {
+            await fetchUser();
+        } catch (error) {
+            console.error("Erreur de rafraîchissement:", error);
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchUser();
+        }, [])
+    );
+
+    // ✅ Fonction pour afficher l'avertissement initial
+    const handleDeleteAccount = () => {
+        Alert.alert(
+            "Supprimer le compte",
+            "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et entraînera la suppression définitive de toutes vos données associées (y compris votre Vitrine et vos Annonces).",
+            [
+                { text: "Annuler", style: "cancel" },
+                {
+                    text: "Continuer",
+                    style: "destructive",
+                    onPress: () => setShowPasswordModal(true)
+                }
+            ]
+        );
+    };
+
+    const confirmDelete = async () => {
+        if (!password.trim()) {
+            Alert.alert("Erreur", "Veuillez entrer votre mot de passe.");
+            return;
+        }
+
+        setShowPasswordModal(false);
+        setDeleting(true);
+
+        try {
+            // ✅ CORRECTION: Utiliser le bon endpoint et envoyer le mot de passe
+            await api.delete('/users/', {
+                data: { password: password.trim() }
+            });
+
+            setPassword(''); // Nettoyer le mot de passe
+            await logout();
+
+            Alert.alert("Succès", "Votre compte a été supprimé avec succès.");
+
+            // Redirection vers l'écran de connexion/accueil
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+            });
+        } catch (error: any) {
+            console.error("Erreur suppression compte:", error);
+            const errorMessage = error.response?.data?.message || "Impossible de supprimer le compte. Vérifiez votre mot de passe.";
+            Alert.alert("Erreur", errorMessage);
+            setPassword(''); // Nettoyer le mot de passe en cas d'erreur
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleCancelPasswordModal = () => {
+        setShowPasswordModal(false);
+        setPassword('');
+    };
+
+    if (deleting) {
+        return (
+            <ScreenWrapper style={styles.center}>
+                <ActivityIndicator size="large" color={theme.colors.danger} />
+                <Text style={{ marginTop: 16, color: theme.colors.text }}>Suppression du compte en cours...</Text>
+            </ScreenWrapper>
+        );
+    }
+
+    if (!user) {
+        return (
+            <ScreenWrapper>
+                <View style={styles.center}>
+                    <Text style={{ color: theme.colors.text }}>Non connecté</Text>
+                    <CustomButton title="Se connecter" onPress={() => navigation.navigate('Login')} style={{ marginTop: 20 }} />
+                </View>
+            </ScreenWrapper>
+        );
+    }
+
+    const renderDetailRow = (label: string, value: string | undefined, icon: any) => (
+        <View style={[styles.row, { borderBottomColor: theme.colors.border }]}>
+            <View style={styles.iconContainer}>
+                <Ionicons name={icon} size={24} color={theme.colors.primary} />
+            </View>
+            <View style={styles.rowContent}>
+                <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{label}</Text>
+                <Text style={[styles.value, { color: theme.colors.text }]}>{value || 'Non renseigné'}</Text>
+            </View>
+        </View>
+    );
+
+    return (
+        <ScreenWrapper>
+            <ScrollView
+                contentContainerStyle={styles.content}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                }
+            >
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+                    </TouchableOpacity>
+
+                    <Text style={[styles.title, { color: theme.colors.text, flex: 1, textAlign: 'center' }]}>Mon Profil</Text>
+
+                    {/* ✅ Icône de poubelle (Coin supérieur droit) */}
+                    <TouchableOpacity onPress={handleDeleteAccount} style={styles.deleteButton}>
+                        <Ionicons name="trash-outline" size={24} color={theme.colors.danger} />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.profileHeader}>
+                    <View style={[styles.avatarPlaceholder, { backgroundColor: theme.colors.surface }]}>
+                        <Text style={[styles.avatarText, { color: theme.colors.primary }]}>
+                            {user.profileName?.charAt(0).toUpperCase() || 'U'}
+                        </Text>
+                    </View>
+                    <Text style={[styles.profileName, { color: theme.colors.text }]}>{user.profileName}</Text>
+                </View>
+
+                <View style={styles.section}>
+                    {renderDetailRow('Email', user.email, 'mail-outline')}
+                    {renderDetailRow('Téléphone', user.phoneNumber, 'call-outline')}
+                    {renderDetailRow('Nom d\'utilisateur', user.username, 'person-outline')}
+                </View>
+
+                <CustomButton
+                    title="Modifier le profil"
+                    onPress={() => navigation.navigate('CompteModificationMain')}
+                    style={styles.editButton}
+                    variant="outline"
+                />
+
+            </ScrollView>
+
+            {/* Modal de confirmation avec mot de passe */}
+            <Modal
+                visible={showPasswordModal}
+                transparent
+                animationType="fade"
+                onRequestClose={handleCancelPasswordModal}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+                        <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+                            Confirmer la suppression
+                        </Text>
+                        <Text style={[styles.modalDescription, { color: theme.colors.textSecondary }]}>
+                            Entrez votre mot de passe pour confirmer la suppression définitive de votre compte.
+                        </Text>
+
+                        <TextInput
+                            style={[styles.passwordInput, {
+                                backgroundColor: theme.colors.background,
+                                color: theme.colors.text,
+                                borderColor: theme.colors.border
+                            }]}
+                            placeholder="Mot de passe"
+                            placeholderTextColor={theme.colors.textSecondary}
+                            secureTextEntry
+                            value={password}
+                            onChangeText={setPassword}
+                            autoFocus
+                        />
+
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                onPress={handleCancelPasswordModal}
+                                style={[styles.modalButton, { backgroundColor: theme.colors.border }]}
+                            >
+                                <Text style={[styles.modalButtonText, { color: theme.colors.text }]}>Annuler</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={confirmDelete}
+                                style={[styles.modalButton, styles.deleteModalButton, { backgroundColor: theme.colors.danger }]}
+                            >
+                                <Text style={[styles.modalButtonText, { color: '#fff' }]}>Supprimer</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        </ScreenWrapper>
+    );
+};
+
+const styles = StyleSheet.create({
+    content: { paddingBottom: 40 },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
+    backButton: { padding: 8 },
+    // ✅ Nouveau style pour l'icône de suppression
+    deleteButton: { padding: 8, marginRight: 0 },
+    title: { fontSize: 20, fontWeight: 'bold' },
+    profileHeader: { alignItems: 'center', marginVertical: 24 },
+    avatarPlaceholder: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+    avatarText: { fontSize: 32, fontWeight: 'bold' },
+    profileName: { fontSize: 24, fontWeight: 'bold' },
+    section: { paddingHorizontal: 16, marginBottom: 24 },
+    row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1 },
+    iconContainer: { width: 40, alignItems: 'center', marginRight: 16 },
+    rowContent: { flex: 1 },
+    label: { fontSize: 12, marginBottom: 4 },
+    value: { fontSize: 16, fontWeight: '500' },
+    editButton: { marginHorizontal: 16, marginTop: 8 },
+    // Styles pour le modal
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+    modalContent: { width: '100%', maxWidth: 400, borderRadius: 12, padding: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
+    modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+    modalDescription: { fontSize: 14, marginBottom: 20, lineHeight: 20 },
+    passwordInput: { borderWidth: 1, borderRadius: 8, padding: 12, fontSize: 16, marginBottom: 20 },
+    modalButtons: { flexDirection: 'row', gap: 12 },
+    modalButton: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center' },
+    deleteModalButton: {},
+    modalButtonText: { fontSize: 16, fontWeight: '600' }
+});
