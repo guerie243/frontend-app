@@ -36,7 +36,6 @@ yarn-error.*
 .env.production
 .env.staging
 .env.test
-
 # typescript
 *.tsbuildinfo
 
@@ -47,5 +46,6 @@ app-example
 /android
 
 # Configuration sensitive files
-src/config/cloudinaryConfig.tsx
-src/config/env.ts
+# src/config/cloudinaryConfig.tsx
+# src/config/env.ts
+
