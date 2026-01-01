@@ -254,10 +254,7 @@ export const VitrineDetailScreen = () => {
                         }}
                     >
                         <Image
-                            source={getSafeUri(currentVitrine.coverImage || currentVitrine.banner)
-                                ? { uri: getSafeUri(currentVitrine.coverImage || currentVitrine.banner) }
-                                : DEFAULT_IMAGES.cover
-                            }
+                            source={getSafeUri(currentVitrine.coverImage || currentVitrine.banner) ? { uri: getSafeUri(currentVitrine.coverImage || currentVitrine.banner) } : DEFAULT_IMAGES.cover}
                             style={[styles.coverImage, { height: 200 }]}
                             resizeMode="cover"
                         />
@@ -290,10 +287,7 @@ export const VitrineDetailScreen = () => {
                             }}
                         >
                             <Image
-                                source={getSafeUri(currentVitrine.logo || currentVitrine.avatar)
-                                    ? { uri: getSafeUri(currentVitrine.logo || currentVitrine.avatar) }
-                                    : DEFAULT_IMAGES.avatar
-                                }
+                                source={getSafeUri(currentVitrine.logo || currentVitrine.avatar) ? { uri: getSafeUri(currentVitrine.logo || currentVitrine.avatar) } : DEFAULT_IMAGES.avatar}
                                 style={[
                                     styles.avatar,
                                     {

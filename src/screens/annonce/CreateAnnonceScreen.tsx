@@ -123,46 +123,19 @@ export const CreateAnnonceScreen = () => {
 
         setIsLoading(true);
         try {
-            let dataToSend: any;
             const categoryToSend = childCategorySlug || parentCategorySlug;
+            const dataToSend = {
+                vitrineSlug: userVitrine.slug,
+                title,
+                description,
+                price: price || '0',
+                currency,
+                category: categoryToSend,
+                locations: locations || '',
+                images: images // Will be converted to FormData by the service because it contains local URIs
+            };
 
-            // Préparation des données: FormData si images présentes, sinon JSON
-            if (images.length > 0) {
-                const formData = new FormData();
-                formData.append('vitrineSlug', userVitrine.slug);
-                formData.append('title', title);
-                formData.append('description', description);
-                // Le prix est envoyé s'il est renseigné, sinon '0' ou vide
-                formData.append('price', price || '0');
-                formData.append('currency', currency);
-                formData.append('category', categoryToSend);
-                formData.append('locations', locations || '');
-
-                images.forEach((img: any, index) => {
-                    formData.append('images', {
-                        uri: img.uri,
-                        name: `image_${index}.jpg`,
-                        type: 'image/jpeg',
-                    } as any);
-                });
-
-                dataToSend = formData;
-            } else {
-                // Ce bloc est techniquement inatteignable si la validation des images est en place,
-                // mais on le garde pour une bonne pratique au cas où la validation change.
-                dataToSend = {
-                    vitrineSlug: userVitrine.slug,
-                    title,
-                    description,
-                    price: price ? parseFloat(price) : 0,
-                    currency,
-                    category: categoryToSend,
-                    images: [],
-                    locations: locations || '',
-                };
-            }
-
-            await createAnnonce(dataToSend);
+            await createAnnonce(dataToSend as any);
 
             Alert.alert('Succès', 'Annonce créée avec succès', [
                 {

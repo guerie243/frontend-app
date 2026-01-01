@@ -55,13 +55,27 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
                 const fetchedRatios: number[] = [];
                 const promises = images.slice(0, 3).map((uri, index) => {
                     return new Promise<void>((resolve) => {
+                        if (!uri || typeof uri !== 'string' || uri.trim() === '') {
+                            fetchedRatios[index] = 1;
+                            resolve();
+                            return;
+                        }
+
+                        // Timeout de 3 secondes pour Image.getSize
+                        const timeoutId = setTimeout(() => {
+                            fetchedRatios[index] = 1;
+                            resolve();
+                        }, 3000);
+
                         Image.getSize(
                             uri,
                             (width, height) => {
+                                clearTimeout(timeoutId);
                                 fetchedRatios[index] = width / height;
                                 resolve();
                             },
                             () => {
+                                clearTimeout(timeoutId);
                                 fetchedRatios[index] = 1;
                                 resolve();
                             }

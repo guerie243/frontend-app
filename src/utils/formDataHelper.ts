@@ -15,10 +15,12 @@ export const toFormData = (data: Record<string, any>): FormData => {
         // Cas des tableaux (souvent pour les images)
         if (Array.isArray(value)) {
             value.forEach((item, index) => {
-                if (typeof item === 'string' && (item.startsWith('file://') || item.startsWith('content://') || item.startsWith('blob:'))) {
+                const itemUri = (typeof item === 'string') ? item : (item && typeof item === 'object' ? item.uri : null);
+
+                if (itemUri && typeof itemUri === 'string' && (itemUri.startsWith('file://') || itemUri.startsWith('content://') || itemUri.startsWith('blob:'))) {
                     // C'est un fichier local
                     formData.append(key, {
-                        uri: (Platform.OS === 'android') ? item : (item.startsWith('blob:') ? item : item.replace('file://', '')),
+                        uri: (Platform.OS === 'android') ? itemUri : (itemUri.startsWith('blob:') ? itemUri : itemUri.replace('file://', '')),
                         type: 'image/jpeg',
                         name: `${key}_${index}.jpg`,
                     } as any);
@@ -27,10 +29,14 @@ export const toFormData = (data: Record<string, any>): FormData => {
                 }
             });
         }
-        // Cas d'un fichier seul (uri string)
-        else if (typeof value === 'string' && (value.startsWith('file://') || value.startsWith('content://') || value.startsWith('blob:'))) {
+        // Cas d'un fichier seul (uri string ou objet avec uri)
+        else if (
+            (typeof value === 'string' && (value.startsWith('file://') || value.startsWith('content://') || value.startsWith('blob:'))) ||
+            (typeof value === 'object' && value !== null && typeof value.uri === 'string' && (value.uri.startsWith('file://') || value.uri.startsWith('content://') || value.uri.startsWith('blob:')))
+        ) {
+            const uri = typeof value === 'string' ? value : value.uri;
             formData.append(key, {
-                uri: (Platform.OS === 'android') ? value : (value.startsWith('blob:') ? value : value.replace('file://', '')),
+                uri: (Platform.OS === 'android') ? uri : (uri.startsWith('blob:') ? uri : uri.replace('file://', '')),
                 type: 'image/jpeg',
                 name: `${key}.jpg`,
             } as any);

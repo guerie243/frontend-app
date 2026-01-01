@@ -14,7 +14,13 @@ export default function Avatar({
   const [loading, setLoading] = useState(true);
   const [scale] = useState(new Animated.Value(0));
 
-  const hasImage = source && source.uri;
+  // Determine if we have a valid image source (either a numeric resource ID or an object with a non-empty string uri)
+  const isValidSource = source && (
+    typeof source === 'number' ||
+    (typeof source === 'object' && typeof source.uri === 'string' && source.uri.trim() !== '')
+  );
+
+  const imageSource = isValidSource ? source : DEFAULT_IMAGES.avatar;
 
   const openModal = () => {
     setVisible(true);
@@ -29,7 +35,7 @@ export default function Avatar({
 
   return (
     <>
-      <Pressable onPress={() => hasImage && openModal()}>
+      <Pressable onPress={() => isValidSource && openModal()}>
         <View
           style={[
             {
@@ -47,7 +53,7 @@ export default function Avatar({
           ]}
         >
           <Image
-            source={hasImage ? source : DEFAULT_IMAGES.avatar}
+            source={imageSource}
             style={{ width: "100%", height: "100%", resizeMode: "cover" }}
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => setLoading(false)}
@@ -66,7 +72,7 @@ export default function Avatar({
         <View style={styles.modalBackground}>
           <Pressable style={styles.closeArea} onPress={() => setVisible(false)} />
           <Animated.Image
-            source={hasImage ? source : DEFAULT_IMAGES.avatar}
+            source={imageSource}
             style={[
               styles.fullImage,
               {

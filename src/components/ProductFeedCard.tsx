@@ -17,7 +17,7 @@ const { width } = Dimensions.get('window');
 
 interface VitrineInfo {
     name: string;
-    logoUri: string;
+    logoSource: any;
     contactPhone: string;
 }
 
@@ -52,9 +52,10 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
                 try {
                     const vitrineData = await fetchVitrineBySlug(annonce.vitrineSlug);
                     if (vitrineData && isMounted) {
+                        const logo = vitrineData.logo || vitrineData.avatar;
                         setVitrineInfo({
                             name: vitrineData.name || 'Vitrine Pro',
-                            logoUri: vitrineData.logo || vitrineData.avatar || DEFAULT_IMAGES.avatar,
+                            logoSource: logo ? { uri: logo } : DEFAULT_IMAGES.avatar,
                             contactPhone: vitrineData.contact?.phone || '',
                         });
                     }
@@ -73,7 +74,7 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
 
     // --- DONNÉES SÉCURISÉES ---
     const vitrineName = vitrineInfo?.name || 'Vendeur Inconnu';
-    const vitrineLogoUri = vitrineInfo?.logoUri;
+    const vitrineLogoSource = vitrineInfo?.logoSource || DEFAULT_IMAGES.avatar;
     const vitrinePhone = vitrineInfo?.contactPhone;
 
     // Lien public spécifique à l'annonce (le 'pagePath')
@@ -134,7 +135,7 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
                 style={styles.header}
                 onPress={() => annonce.vitrineSlug && onVitrinePress(annonce.vitrineSlug)}
             >
-                <Avatar size={40} source={{ uri: vitrineLogoUri }} style={styles.profilePic} />
+                <Avatar size={40} source={vitrineLogoSource} style={styles.profilePic} />
                 <View style={styles.headerTextContainer}>
                     <Text style={[styles.sellerName, { color: theme.colors.text }]} numberOfLines={1}>
                         {isLoadingVitrine ? 'Chargement...' : vitrineName}
