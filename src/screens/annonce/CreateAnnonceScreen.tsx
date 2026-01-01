@@ -214,7 +214,7 @@ export const CreateAnnonceScreen = () => {
                     {/* 1. UPLOADER D'IMAGE (Déplacé en premier) */}
                     <View style={[styles.imageUploaderContainer, { zIndex: 100 }]} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
                         <Text style={[styles.imageUploaderTitle, { color: theme.colors.text }]}>
-                            Photos (2 à 5 images)*
+                            Photos (1 à 5 images)*
                         </Text>
                         <ImageUploader images={images} setImages={setImages} />
                     </View>
@@ -261,7 +261,7 @@ export const CreateAnnonceScreen = () => {
                          */}
                         <CustomInput
                             // Le prix est rendu optionnel ici
-                            label="Prix (Optionnel)"
+                            label="Prix"
                             placeholder="0.00"
                             value={price}
                             onChangeText={setPrice}
