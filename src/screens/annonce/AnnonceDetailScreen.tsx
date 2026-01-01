@@ -61,9 +61,10 @@ export const AnnonceDetailScreen = () => {
     // PanResponder pour le glissement vertical
     const panResponder = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: () => true,
+            onStartShouldSetPanResponder: () => Platform.OS !== 'web',
+            onMoveShouldSetPanResponder: () => Platform.OS !== 'web',
             onPanResponderMove: (_, gestureState) => {
+                if (Platform.OS === 'web') return;
                 let newHeight = MIN_INFO_HEIGHT - gestureState.dy;
                 // Ajouter une résistance si on dépasse les bornes
                 if (newHeight > MAX_INFO_HEIGHT) newHeight = MAX_INFO_HEIGHT + (newHeight - MAX_INFO_HEIGHT) / 5;
@@ -71,6 +72,7 @@ export const AnnonceDetailScreen = () => {
                 infoHeight.setValue(newHeight);
             },
             onPanResponderRelease: (_, gestureState) => {
+                if (Platform.OS === 'web') return;
                 // Si on tire fort vers le haut ou si on dépasse la moitié
                 const shouldOpen = gestureState.dy < -50 || (currentInfoHeight > (MAX_INFO_HEIGHT + MIN_INFO_HEIGHT) / 2);
                 const targetHeight = shouldOpen ? MAX_INFO_HEIGHT : MIN_INFO_HEIGHT;

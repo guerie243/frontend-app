@@ -69,8 +69,10 @@ export const VitrineDetailScreen = () => {
 
     // --- Identification du Propriétaire ---
     // On compare l'ID utilisateur (si connecté) avec l'ownerId de la vitrine
-    const currentUserId = user?.userId;
-    const isOwner = user && displayedVitrine && (user.userId === displayedVitrine.owner);
+    // Le user peut avoir `id`, `_id` ou `userId` selon la source.
+    const currentUserId = user ? (user.id || user._id || user.userId) : null;
+    // On utilise une comparaison souple (==) pour gérer string vs number
+    const isOwner = isAuthenticated && user && displayedVitrine && (currentUserId == displayedVitrine.ownerId || currentUserId == displayedVitrine.owner);
 
     // --- LOGIQUE REFRESH ---
     const onRefresh = useCallback(async () => {

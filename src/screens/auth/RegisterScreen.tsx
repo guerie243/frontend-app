@@ -79,6 +79,11 @@ export const RegisterScreen = () => {
                 console.log('Logged in, showing success alert...');
                 Alert.alert('Succès', 'Inscription réussie !');
                 console.log('Resetting navigation to MainTabs...');
+                setProfileName('');
+                setEmail('');
+                setPhoneNumber('');
+                setPassword('');
+                setConfirmPassword('');
                 navigation.reset({
                     index: 0,
                     routes: [{ name: 'MainTabs' }],

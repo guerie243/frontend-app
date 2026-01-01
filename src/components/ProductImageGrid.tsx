@@ -16,8 +16,17 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const pulseAnim = useRef(new Animated.Value(0.4)).current;
 
-    const displayImagesCount = Math.min(images.length, 3);
-    const hasMore = images.length > 3;
+    // Filtrage robuste des images pour éviter les "[object Object]" et les URLs vides
+    const validImages = images.filter(img =>
+        img &&
+        typeof img === 'string' &&
+        img.trim().length > 0 &&
+        !img.includes('[object Object]') &&
+        (img.startsWith('http') || img.startsWith('file://') || img.startsWith('data:') || img.startsWith('blob:'))
+    );
+
+    const displayImages = validImages.slice(0, 3);
+    const overflowCount = validImages.length > 3 ? validImages.length - 3 : 0;
 
     // Loading Pulse Animation
     useEffect(() => {

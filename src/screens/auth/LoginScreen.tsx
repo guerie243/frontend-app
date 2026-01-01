@@ -73,6 +73,8 @@ export const LoginScreen = () => {
                 console.log('Login state updated, showing alert...');
                 Alert.alert('Succès', 'Connexion réussie !');
                 console.log('Resetting navigation to MainTabs...');
+                setIdentifier('');
+                setPassword('');
                 navigation.reset({
                     index: 0,
                     routes: [{ name: 'MainTabs' }],
