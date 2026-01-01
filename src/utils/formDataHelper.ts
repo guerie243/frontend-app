@@ -25,6 +25,7 @@ export const toFormData = (data: Record<string, any>): FormData => {
                         name: `${key}_${index}.jpg`,
                     } as any);
                 } else {
+                    // Pour les tableaux non-fichiers, on utilise une notation compatible PHP/Express
                     formData.append(`${key}[${index}]`, item);
                 }
             });
@@ -41,7 +42,7 @@ export const toFormData = (data: Record<string, any>): FormData => {
                 name: `${key}.jpg`,
             } as any);
         }
-        // Cas d'un objet (ex: contact)
+        // Cas d'un objet (ex: contact) qui n'est pas un fichier
         else if (typeof value === 'object' && value !== null) {
             formData.append(key, JSON.stringify(value));
         }
