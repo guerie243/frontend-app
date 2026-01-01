@@ -505,7 +505,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     },
     bannerSection: {
         marginTop: theme.spacing.s,
-        marginBottom: theme.spacing.m,
+        marginBottom: theme.spacing.xs, // Reduced from .m to .xs for tighter spacing
         // Carousel Padding logic was managed by constant CAROUSEL_PADDING_HORIZONTAL = 0
     },
     categoriesSection: {
