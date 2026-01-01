@@ -108,9 +108,9 @@ export const CreateAnnonceScreen = () => {
             );
         }
 
-        // ❌ Validation: 2 à 5 photos obligatoires
-        if (images.length < 2) {
-            return Alert.alert('Erreur', 'Veuillez ajouter au moins 2 images pour votre annonce.');
+        // ❌ Validation: 2 à 5 photos obligatoires -> 1 minimum
+        if (images.length < 1) {
+            return Alert.alert('Erreur', 'Veuillez ajouter au moins 1 image pour votre annonce.');
         }
         if (images.length > 5) {
             return Alert.alert('Erreur', 'Vous ne pouvez pas ajouter plus de 5 images.');

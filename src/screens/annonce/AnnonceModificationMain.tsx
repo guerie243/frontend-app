@@ -143,6 +143,8 @@ export const AnnonceModificationMain = () => {
                     {renderFieldItem('Devise', annonce.currency || 'USD', 'currency')}
                     {renderFieldItem('Lieux', (Array.isArray(annonce.locations) ? annonce.locations.join(', ') : (typeof annonce.locations === 'string' ? annonce.locations : '')) || '', 'locations')}
                     {renderFieldItem('Description', annonce.description || '', 'description', { multiline: true })}
+                    {/* Ajout du champ Images */}
+                    {renderFieldItem('Images', `${(annonce.images || []).length} photo(s)`, 'images', { initialImages: annonce.images })}
                 </View>
 
                 {/* Suppression de la section Description et Lien redondante */}

@@ -46,10 +46,10 @@ export const AnnonceDetailScreen = () => {
 
     // --- États ---
     const [vitrineInfo, setVitrineInfo] = useState<any>(null);
-    const [currentInfoHeight, setCurrentInfoHeight] = useState(MIN_INFO_HEIGHT);
+    const [currentInfoHeight, setCurrentInfoHeight] = useState(Platform.OS === 'web' ? MAX_INFO_HEIGHT : MIN_INFO_HEIGHT);
 
     // --- Animation ---
-    const infoHeight = useRef(new Animated.Value(MIN_INFO_HEIGHT)).current;
+    const infoHeight = useRef(new Animated.Value(Platform.OS === 'web' ? MAX_INFO_HEIGHT : MIN_INFO_HEIGHT)).current;
 
     // Interpolation pour réduire le carousel quand on monte le panneau
     const carouselOpacity = infoHeight.interpolate({
@@ -233,10 +233,12 @@ export const AnnonceDetailScreen = () => {
                     }
                 ]}
             >
-                {/* Zone de Grip (PanResponder) */}
-                <View {...panResponder.panHandlers} style={styles.gripContainer}>
-                    <View style={[styles.gripHandle, { backgroundColor: theme.colors.border }]} />
-                </View>
+                {/* Zone de Grip (PanResponder) - Caché sur Web */}
+                {Platform.OS !== 'web' && (
+                    <View {...panResponder.panHandlers} style={styles.gripContainer}>
+                        <View style={[styles.gripHandle, { backgroundColor: theme.colors.border }]} />
+                    </View>
+                )}
 
                 <ScrollView
                     contentContainerStyle={styles.scrollContent}

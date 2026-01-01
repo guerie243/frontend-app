@@ -19,6 +19,7 @@ import { CascadingSelects, CascadingParentOption, SimpleSelect } from '../../com
 // 💡 IMPORTATION DE LA NOUVELLE CONSTANTE FORMATÉE et chemin ajusté
 import { ANNONCE_CATEGORIES_FORMATTED } from '../../Data/annoncetypes';
 import { CURRENCY_OPTIONS } from '../../Data/currencies';
+import ImageUploader from '../../components/ImagePictureUploader'; // Import ImageUploader
 
 // Définition du type de la constante pour la démo (le format SelectSection que vous utilisiez)
 interface RawCategorySection {
@@ -34,10 +35,11 @@ export const EditAnnonceFieldScreen = () => {
     const { updateAnnonce } = useAnnonces();
 
     // currentValue est la sous-catégorie (slug) si field === 'category'
-    const { field, label, currentValue, annonceSlug, vitrineSlug, multiline, keyboardType } = route.params;
+    const { field, label, currentValue, annonceSlug, vitrineSlug, multiline, keyboardType, initialImages } = route.params;
 
     // 💡 CHANGEMENT 2 : Si le champ n'est PAS 'category', nous utilisons le useState simple.
-    const [value, setValue] = useState(field !== 'category' ? (currentValue || '') : '');
+    // Pour 'images', on utilise initialImages
+    const [value, setValue] = useState(field === 'images' ? (initialImages || []) : (field !== 'category' ? (currentValue || '') : ''));
 
     // 💡 CHANGEMENT 3 : États pour les sélecteurs en cascade
     const [parentCategorySlug, setParentCategorySlug] = useState<string | null>(null);
@@ -81,7 +83,14 @@ export const EditAnnonceFieldScreen = () => {
 
     const handleSave = async () => {
         // La valeur à sauvegarder dépend du champ
-        const finalValue = field === 'category' ? childCategorySlug : value.toString().trim();
+        let finalValue;
+        if (field === 'category') {
+            finalValue = childCategorySlug;
+        } else if (field === 'images') {
+            finalValue = value; // Array of images
+        } else {
+            finalValue = value.toString().trim();
+        }
 
         if (!finalValue) {
             Alert.alert('Erreur', field === 'category' ? 'Veuillez sélectionner une sous-catégorie' : 'Le champ ne peut pas être vide');
@@ -103,12 +112,17 @@ export const EditAnnonceFieldScreen = () => {
             await updateAnnonce(annonceSlug, updates);
 
             const refreshTimestamp = Date.now();
-            // Utiliser navigate au lieu de replace pour éviter d'ajouter une nouvelle instance dans la stack
-            navigation.navigate('AnnonceModificationMain', {
-                annonceSlug,
-                vitrineSlug,
-                refreshed: refreshTimestamp
-            });
+            // Utiliser goBack pour revenir à la gestion, le useFocusEffect là-bas rechargera les données
+            if (navigation.canGoBack()) {
+                navigation.goBack();
+            } else {
+                // Fallback si pas de back stack (peu probable)
+                navigation.navigate('AnnonceModificationMain', {
+                    annonceSlug,
+                    vitrineSlug,
+                    refreshed: refreshTimestamp
+                });
+            }
 
         } catch (error: any) {
             console.error("❌ [EditAnnonceField] Erreur lors de la sauvegarde:", error);
@@ -135,7 +149,6 @@ export const EditAnnonceFieldScreen = () => {
                     onChildChange={setChildCategorySlug}
                 />
             );
-        } else if (field === 'currency') {
             return (
                 <View style={{ zIndex: 100 }}>
                     <SimpleSelect
@@ -144,6 +157,18 @@ export const EditAnnonceFieldScreen = () => {
                         value={value.toString()}
                         onChange={(val) => setValue(val)}
                         zIndex={100}
+                    />
+                </View>
+            );
+        } else if (field === 'images') {
+            return (
+                <View style={{ flex: 1 }}>
+                    <Text style={{ marginBottom: 10, color: theme.colors.textSecondary }}>
+                        Vous pouvez ajouter ou supprimer des photos. (Min 1, Max 5)
+                    </Text>
+                    <ImageUploader
+                        images={value}
+                        setImages={setValue}
                     />
                 </View>
             );
