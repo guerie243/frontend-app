@@ -117,24 +117,38 @@ export const AnnonceDetailScreen = () => {
         });
     };
 
-    const handleDelete = () => {
-        Alert.alert(
-            'Suppression',
-            'Voulez-vous vraiment supprimer cette annonce ?',
-            [
-                { text: 'Annuler', style: 'cancel' },
-                {
-                    text: 'Supprimer',
-                    style: 'destructive',
-                    onPress: async () => {
-                        if (currentAnnonce) {
-                            await deleteAnnonce(currentAnnonce.slug);
-                            navigation.goBack();
+    const handleDelete = async () => {
+        if (!currentAnnonce) return;
+
+        if (Platform.OS === 'web') {
+            if (window.confirm('Voulez-vous vraiment supprimer cette annonce ?')) {
+                try {
+                    await deleteAnnonce(currentAnnonce.slug);
+                    navigation.goBack();
+                } catch (e) {
+                    console.error(e);
+                    window.alert("Erreur lors de la suppression");
+                }
+            }
+        } else {
+            Alert.alert(
+                'Suppression',
+                'Voulez-vous vraiment supprimer cette annonce ?',
+                [
+                    { text: 'Annuler', style: 'cancel' },
+                    {
+                        text: 'Supprimer',
+                        style: 'destructive',
+                        onPress: async () => {
+                            if (currentAnnonce) {
+                                await deleteAnnonce(currentAnnonce.slug);
+                                navigation.goBack();
+                            }
                         }
                     }
-                }
-            ]
-        );
+                ]
+            );
+        }
     };
 
     const handleGoToVitrine = () => {

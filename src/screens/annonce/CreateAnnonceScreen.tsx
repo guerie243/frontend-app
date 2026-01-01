@@ -137,27 +137,48 @@ export const CreateAnnonceScreen = () => {
 
             await createAnnonce(dataToSend as any);
 
-            Alert.alert('Succès', 'Annonce créée avec succès', [
-                {
-                    text: 'OK',
-                    onPress: () => {
-                        // Réinitialisation des champs
-                        setTitle('');
-                        setDescription('');
-                        setPrice('');
-                        setCurrency('EUR');
-                        setImages([]);
-                        setParentCategorySlug(null);
-                        setChildCategorySlug(null);
-                        setLocations('');
-                        // Redirection vers la page VitrineDetail
-                        navigation.navigate('VitrineDetail', {
-                            refresh: Date.now(),
-                            slug: userVitrine.slug
-                        });
+            // Succès
+            if (Platform.OS === 'web') {
+                // Sur Web, Alert.alert ne supporte pas bien les callbacks.
+                // On utilise window.confirm ou window.alert puis on navigue.
+                window.alert('Annonce créée avec succès !');
+
+                // Exécution immédiate de la logique de succès
+                setTitle('');
+                setDescription('');
+                setPrice('');
+                setCurrency('EUR');
+                setImages([]);
+                setParentCategorySlug(null);
+                setChildCategorySlug(null);
+                setLocations('');
+
+                navigation.navigate('VitrineDetail', {
+                    refresh: Date.now(),
+                    slug: userVitrine.slug
+                });
+            } else {
+                // Native : on garde l'Alert avec callback
+                Alert.alert('Succès', 'Annonce créée avec succès', [
+                    {
+                        text: 'OK',
+                        onPress: () => {
+                            setTitle('');
+                            setDescription('');
+                            setPrice('');
+                            setCurrency('EUR');
+                            setImages([]);
+                            setParentCategorySlug(null);
+                            setChildCategorySlug(null);
+                            setLocations('');
+                            navigation.navigate('VitrineDetail', {
+                                refresh: Date.now(),
+                                slug: userVitrine.slug
+                            });
+                        }
                     }
-                }
-            ]);
+                ]);
+            }
         } catch (error: any) {
             console.error('Erreur création annonce:', error);
             Alert.alert('Erreur', error.message || 'Impossible de créer l\'annonce');
