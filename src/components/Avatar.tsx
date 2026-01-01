@@ -11,7 +11,7 @@ export default function Avatar({
   style,
 }) {
   const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed from true to false
   const [scale] = useState(new Animated.Value(0));
 
   // Determine if we have a valid image source (either a numeric resource ID or an object with a non-empty string uri)
@@ -57,6 +57,7 @@ export default function Avatar({
             style={{ width: "100%", height: "100%", resizeMode: "cover" }}
             onLoadStart={() => setLoading(true)}
             onLoadEnd={() => setLoading(false)}
+            onError={() => setLoading(false)}
           />
           {loading && (
             <ActivityIndicator
