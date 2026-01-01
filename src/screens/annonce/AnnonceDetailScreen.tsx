@@ -46,10 +46,10 @@ export const AnnonceDetailScreen = () => {
 
     // --- États ---
     const [vitrineInfo, setVitrineInfo] = useState<any>(null);
-    const [currentInfoHeight, setCurrentInfoHeight] = useState(Platform.OS === 'web' ? MAX_INFO_HEIGHT : MIN_INFO_HEIGHT);
+    const [currentInfoHeight, setCurrentInfoHeight] = useState(MIN_INFO_HEIGHT);
 
     // --- Animation ---
-    const infoHeight = useRef(new Animated.Value(Platform.OS === 'web' ? MAX_INFO_HEIGHT : MIN_INFO_HEIGHT)).current;
+    const infoHeight = useRef(new Animated.Value(MIN_INFO_HEIGHT)).current;
 
     // Interpolation pour réduire le carousel quand on monte le panneau
     const carouselOpacity = infoHeight.interpolate({
@@ -61,10 +61,10 @@ export const AnnonceDetailScreen = () => {
     // PanResponder pour le glissement vertical
     const panResponder = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponder: () => Platform.OS !== 'web',
-            onMoveShouldSetPanResponder: () => Platform.OS !== 'web',
+            // Active le PanResponder sur TOUTES les plateformes (y compris Web)
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: () => true,
             onPanResponderMove: (_, gestureState) => {
-                if (Platform.OS === 'web') return;
                 let newHeight = MIN_INFO_HEIGHT - gestureState.dy;
                 // Ajouter une résistance si on dépasse les bornes
                 if (newHeight > MAX_INFO_HEIGHT) newHeight = MAX_INFO_HEIGHT + (newHeight - MAX_INFO_HEIGHT) / 5;
@@ -72,14 +72,13 @@ export const AnnonceDetailScreen = () => {
                 infoHeight.setValue(newHeight);
             },
             onPanResponderRelease: (_, gestureState) => {
-                if (Platform.OS === 'web') return;
                 // Si on tire fort vers le haut ou si on dépasse la moitié
                 const shouldOpen = gestureState.dy < -50 || (currentInfoHeight > (MAX_INFO_HEIGHT + MIN_INFO_HEIGHT) / 2);
                 const targetHeight = shouldOpen ? MAX_INFO_HEIGHT : MIN_INFO_HEIGHT;
 
                 Animated.spring(infoHeight, {
                     toValue: targetHeight,
-                    useNativeDriver: false,
+                    useNativeDriver: false, // Important pour Layout Animation
                     bounciness: 4,
                 }).start();
                 setCurrentInfoHeight(targetHeight);
@@ -233,12 +232,10 @@ export const AnnonceDetailScreen = () => {
                     }
                 ]}
             >
-                {/* Zone de Grip (PanResponder) - Caché sur Web */}
-                {Platform.OS !== 'web' && (
-                    <View {...panResponder.panHandlers} style={styles.gripContainer}>
-                        <View style={[styles.gripHandle, { backgroundColor: theme.colors.border }]} />
-                    </View>
-                )}
+                {/* Zone de Grip (PanResponder) */}
+                <View {...panResponder.panHandlers} style={styles.gripContainer}>
+                    <View style={[styles.gripHandle, { backgroundColor: theme.colors.border }]} />
+                </View>
 
                 <ScrollView
                     contentContainerStyle={styles.scrollContent}
