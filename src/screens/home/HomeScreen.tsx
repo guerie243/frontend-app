@@ -180,8 +180,11 @@ export const HomeScreen = () => {
         setIsSearchActive(true);
         setActiveCategoryId(null);
         setSelectedCategory(categories[0]?.slug || '');
+
+        // Utiliser les paramètres directement au lieu du state (async)
         await fetchFeed(1, 20, undefined, query);
-        await loadVitrines(undefined, query);
+        await loadVitrines(null, query);
+
         setPage(1);
         flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, [fetchFeed, loadVitrines, categories, handleGoToAnnonceDetail, handleGoToVitrine]);
@@ -196,8 +199,10 @@ export const HomeScreen = () => {
         setActiveSearchQuery('');
         setSearchQuery('');
 
+        // Utiliser newCategoryId directement au lieu de activeCategoryId (state async)
         await fetchFeed(1, 20, newCategoryId || undefined, undefined);
-        await loadVitrines(newCategoryId || undefined, undefined);
+        await loadVitrines(newCategoryId, undefined);
+
         setPage(1);
 
         // REMONTER EN HAUT AU CLIC SUR UNE CATÉGORIE
@@ -230,8 +235,11 @@ export const HomeScreen = () => {
         setSearchQuery('');
         setActiveCategoryId(null);
         setSelectedCategory(categories[0]?.slug || '');
+
+        // Charger tout sans filtres
         await fetchFeed(1, 20, undefined, undefined);
-        await loadVitrines(undefined, undefined);
+        await loadVitrines(null, undefined);
+
         setPage(1);
         flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, [fetchFeed, loadVitrines, categories]);

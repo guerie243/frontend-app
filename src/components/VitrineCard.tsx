@@ -17,7 +17,19 @@ export const VitrineCard: React.FC<VitrineCardProps> = ({ vitrine, onPress, vari
 
     const avatarUri = vitrine.avatar || vitrine.logo;
     const coverUri = vitrine.coverImage || vitrine.banner;
-    const categoryLabel = vitrine.type || vitrine.category || 'Général';
+
+    // Logic to determine the best category label
+    const rawType = vitrine.type;
+    const rawCategory = vitrine.category;
+    let categoryLabel = 'Général';
+
+    if (rawType && rawType.toLowerCase() !== 'general' && rawType.toLowerCase() !== 'général') {
+        categoryLabel = rawType;
+    } else if (rawCategory && rawCategory.toLowerCase() !== 'general' && rawCategory.toLowerCase() !== 'général') {
+        categoryLabel = rawCategory;
+    } else if (rawType || rawCategory) {
+        categoryLabel = rawType || rawCategory || 'Général';
+    }
 
     if (variant === 'scroll') {
         return (
