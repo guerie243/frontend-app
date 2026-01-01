@@ -22,6 +22,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useAnnonces } from '../../hooks/useAnnonces';
 import { AnnonceCard } from '../../components/AnnonceCard';
 import { ENV } from '../../config/env';
+import { DEFAULT_IMAGES } from '../../constants/images';
 
 // Helper pour sécuriser les sources d'images
 const getSafeUri = (source: any): string | undefined => {
@@ -133,7 +134,10 @@ export const VitrinePublicScreen = () => {
             <View style={styles.coverSection}>
                 {/* 1.1. Cover Image (Read Only) */}
                 <Image
-                    source={{ uri: getSafeUri(currentVitrine.coverImage || currentVitrine.banner) }}
+                    source={getSafeUri(currentVitrine.coverImage || currentVitrine.banner)
+                        ? { uri: getSafeUri(currentVitrine.coverImage || currentVitrine.banner) }
+                        : DEFAULT_IMAGES.cover
+                    }
                     style={styles.coverImage}
                     resizeMode="cover"
                 />
@@ -141,7 +145,10 @@ export const VitrinePublicScreen = () => {
                 {/* 1.2. Avatar (Read Only) */}
                 <View style={[styles.avatarSection, { borderColor: theme.colors.surface }]}>
                     <Image
-                        source={{ uri: getSafeUri(currentVitrine.logo || currentVitrine.avatar) }}
+                        source={getSafeUri(currentVitrine.logo || currentVitrine.avatar)
+                            ? { uri: getSafeUri(currentVitrine.logo || currentVitrine.avatar) }
+                            : DEFAULT_IMAGES.avatar
+                        }
                         style={[styles.avatar, { borderColor: theme.colors.surface }]}
                     />
                 </View>

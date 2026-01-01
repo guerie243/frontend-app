@@ -30,6 +30,7 @@ import { useAnnonces } from '../../hooks/useAnnonces';
 import { AnnonceCard } from '../../components/AnnonceCard';
 import { ENV } from '../../config/env';
 import { ImagePreviewModal } from '../../components/ImagePreviewModal';
+import { DEFAULT_IMAGES } from '../../constants/images';
 
 // Helper pour sécuriser les sources d'images
 const getSafeUri = (source: any): string | undefined => {
@@ -240,13 +241,19 @@ export const VitrineDetailScreen = () => {
                     // VISITOR: Simple Image (Decreased height by 1/4: 200 -> 150)
                     <TouchableOpacity
                         activeOpacity={0.9}
-                        onPress={() => setPreviewImage({
-                            visible: true,
-                            url: getSafeUri(currentVitrine.coverImage || currentVitrine.banner)
-                        })}
+                        onPress={() => {
+                            const uri = getSafeUri(currentVitrine.coverImage || currentVitrine.banner);
+                            setPreviewImage({
+                                visible: true,
+                                url: uri || Image.resolveAssetSource(DEFAULT_IMAGES.cover).uri
+                            });
+                        }}
                     >
                         <Image
-                            source={{ uri: getSafeUri(currentVitrine.coverImage || currentVitrine.banner) }}
+                            source={getSafeUri(currentVitrine.coverImage || currentVitrine.banner)
+                                ? { uri: getSafeUri(currentVitrine.coverImage || currentVitrine.banner) }
+                                : DEFAULT_IMAGES.cover
+                            }
                             style={[styles.coverImage, { height: 200 }]}
                             resizeMode="cover"
                         />
@@ -271,13 +278,19 @@ export const VitrineDetailScreen = () => {
                         // VISITOR: Simple Avatar (Increased size: 80 -> 120)
                         <TouchableOpacity
                             activeOpacity={0.9}
-                            onPress={() => setPreviewImage({
-                                visible: true,
-                                url: getSafeUri(currentVitrine.logo || currentVitrine.avatar)
-                            })}
+                            onPress={() => {
+                                const uri = getSafeUri(currentVitrine.logo || currentVitrine.avatar);
+                                setPreviewImage({
+                                    visible: true,
+                                    url: uri || Image.resolveAssetSource(DEFAULT_IMAGES.avatar).uri
+                                });
+                            }}
                         >
                             <Image
-                                source={{ uri: getSafeUri(currentVitrine.logo || currentVitrine.avatar) }}
+                                source={getSafeUri(currentVitrine.logo || currentVitrine.avatar)
+                                    ? { uri: getSafeUri(currentVitrine.logo || currentVitrine.avatar) }
+                                    : DEFAULT_IMAGES.avatar
+                                }
                                 style={[
                                     styles.avatar,
                                     {

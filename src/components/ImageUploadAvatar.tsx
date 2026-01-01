@@ -19,7 +19,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { compressImage } from '../utils/imageUploader';
 
 // Image par défaut 
-const DefaultAvatar = { uri: "https://via.placeholder.com/150?text=Avatar" };
+const DefaultAvatar = require('../../assets/images/defaultimages/default-avatar.png');
 
 const ImageUploadAvatar = ({
     initialImage,
@@ -116,7 +116,7 @@ const ImageUploadAvatar = ({
                         <ActivityIndicator size="small" color="#000" />
                     ) : (
                         <Image
-                            source={{ uri: imageUri || DefaultAvatar.uri }}
+                            source={imageUri ? { uri: imageUri } : DefaultAvatar}
                             style={imageStyle}
                             resizeMode="cover"
                         />
@@ -143,7 +143,7 @@ const ImageUploadAvatar = ({
                 <View style={styles.modalBackground}>
                     <Pressable style={styles.closeArea} onPress={() => setModalVisible(false)} />
                     <Animated.Image
-                        source={{ uri: imageUri || DefaultAvatar.uri }}
+                        source={imageUri ? { uri: imageUri } : DefaultAvatar}
                         style={[
                             styles.fullImage,
                             {

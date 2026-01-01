@@ -27,6 +27,7 @@ import { getRelativeTime } from '../../utils/dateUtils';
 import { LoadingComponent } from '../../components/LoadingComponent';
 import { StateMessage } from '../../components/StateMessage';
 import { ENV } from '../../config/env';
+import { DEFAULT_IMAGES } from '../../constants/images';
 
 // Constantes pour l'animation du Bottom Sheet
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -269,7 +270,10 @@ export const AnnonceDetailScreen = () => {
                         >
                             <Avatar
                                 size={50}
-                                source={{ uri: vitrineInfo.logo || vitrineInfo.avatar }}
+                                source={vitrineInfo.logo || vitrineInfo.avatar
+                                    ? { uri: vitrineInfo.logo || vitrineInfo.avatar }
+                                    : DEFAULT_IMAGES.avatar
+                                }
                             />
                             <View style={styles.sellerInfo}>
                                 <Text style={[styles.sellerLabel, { color: theme.colors.textSecondary }]}>par</Text>

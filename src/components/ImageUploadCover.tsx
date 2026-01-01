@@ -17,7 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { compressImage } from '../utils/imageUploader';
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const DefaultCover = { uri: "https://via.placeholder.com/600x200?text=Cover+Image" };
+const DefaultCover = require('../../assets/images/defaultimages/default-cover.png');
 
 const ImageUploadCover = ({
   initialImage,
@@ -87,7 +87,7 @@ const ImageUploadCover = ({
       <View style={[styles.container, { height }]}>
         <Pressable onPress={openModal} style={styles.content}>
           <Image
-            source={{ uri: imageUri || DefaultCover.uri }}
+            source={imageUri ? { uri: imageUri } : DefaultCover}
             style={[styles.coverImage, { height }]}
             resizeMode="cover"
           />
@@ -111,7 +111,7 @@ const ImageUploadCover = ({
         <View style={styles.modalBackground}>
           <Pressable style={styles.closeArea} onPress={() => setModalVisible(false)} />
           <Animated.Image
-            source={{ uri: imageUri || DefaultCover.uri }}
+            source={imageUri ? { uri: imageUri } : DefaultCover}
             style={[
               styles.fullImage,
               {

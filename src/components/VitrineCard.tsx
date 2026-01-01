@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Vitrine } from '../types';
 import Avatar from './Avatar';
+import { DEFAULT_IMAGES } from '../constants/images';
 
 interface VitrineCardProps {
     vitrine: Vitrine;
@@ -14,7 +15,7 @@ export const VitrineCard: React.FC<VitrineCardProps> = ({ vitrine, onPress, vari
     const { theme } = useTheme();
     const styles = React.useMemo(() => createStyles(theme, variant), [theme, variant]);
 
-    const avatarUri = vitrine.avatar || vitrine.logo || 'https://via.placeholder.com/60';
+    const avatarUri = vitrine.avatar || vitrine.logo;
     const coverUri = vitrine.coverImage || vitrine.banner;
     const categoryLabel = vitrine.type || vitrine.category || 'Général';
 
@@ -25,12 +26,16 @@ export const VitrineCard: React.FC<VitrineCardProps> = ({ vitrine, onPress, vari
                 {coverUri ? (
                     <Image source={{ uri: coverUri }} style={styles.scrollCover} resizeMode="cover" />
                 ) : (
-                    <View style={[styles.scrollCover, { backgroundColor: theme.colors.surfaceLight }]} />
+                    <Image source={DEFAULT_IMAGES.cover} style={styles.scrollCover} resizeMode="cover" />
                 )}
 
                 {/* Avatar positioned over cover */}
                 <View style={styles.scrollAvatarContainer}>
-                    <Avatar size={90} source={{ uri: avatarUri }} style={{}} />
+                    <Avatar
+                        size={90}
+                        source={avatarUri ? { uri: avatarUri } : DEFAULT_IMAGES.avatar}
+                        style={{}}
+                    />
                 </View>
 
                 {/* Info Section */}
@@ -49,7 +54,11 @@ export const VitrineCard: React.FC<VitrineCardProps> = ({ vitrine, onPress, vari
     // List variant
     return (
         <TouchableOpacity style={styles.listCard} onPress={onPress} activeOpacity={0.8}>
-            <Avatar size={50} source={{ uri: avatarUri }} style={{}} />
+            <Avatar
+                size={50}
+                source={avatarUri ? { uri: avatarUri } : DEFAULT_IMAGES.avatar}
+                style={{}}
+            />
             <View style={styles.listInfo}>
                 <Text style={[styles.listName, { color: theme.colors.text }]} numberOfLines={1}>
                     {vitrine.name}
