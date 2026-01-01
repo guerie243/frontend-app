@@ -4,45 +4,72 @@ import { Platform } from 'react-native';
  * Convertit un objet plat en FormData, gérant les fichiers (URI locales).
  * Supporte les tableaux de fichiers (e.g., images).
  */
-export const toFormData = (data: Record<string, any>): FormData => {
+/**
+ * Convertit un objet plat en FormData, gérant les fichiers (URI locales).
+ * Supporte les tableaux de fichiers (e.g., images).
+ * ASYNC pour supporter le fetch de Blobs sur Web.
+ */
+export const toFormData = async (data: Record<string, any>): Promise<FormData> => {
     const formData = new FormData();
 
-    Object.keys(data).forEach(key => {
+    for (const key of Object.keys(data)) {
         const value = data[key];
 
-        if (value === undefined || value === null) return;
+        if (value === undefined || value === null) continue;
 
         // Cas des tableaux (souvent pour les images)
         if (Array.isArray(value)) {
-            value.forEach((item, index) => {
+            for (let i = 0; i < value.length; i++) {
+                const item = value[i];
                 const itemUri = (typeof item === 'string') ? item : (item && typeof item === 'object' ? item.uri : null);
 
-                if (itemUri && typeof itemUri === 'string' && (itemUri.startsWith('file://') || itemUri.startsWith('content://') || itemUri.startsWith('blob:'))) {
+                if (itemUri && typeof itemUri === 'string' && (itemUri.startsWith('file://') || itemUri.startsWith('content://') || itemUri.startsWith('blob:') || itemUri.startsWith('data:'))) {
                     // C'est un fichier local
-                    formData.append(key, {
-                        uri: (Platform.OS === 'android') ? itemUri : (itemUri.startsWith('blob:') ? itemUri : itemUri.replace('file://', '')),
-                        type: 'image/jpeg',
-                        name: `${key}_${index}.jpg`,
-                    } as any);
+                    if (Platform.OS === 'web') {
+                        // Sur Web, il faut convertir l'URI en Blob
+                        try {
+                            const response = await fetch(itemUri);
+                            const blob = await response.blob();
+                            formData.append(key, blob, `image_${Date.now()}_${i}.jpg`);
+                        } catch (e) {
+                            console.error("Erreur conversion Blob Web:", e);
+                        }
+                    } else {
+                        // Native
+                        formData.append(key, {
+                            uri: itemUri,
+                            type: 'image/jpeg',
+                            name: `${key}_${i}.jpg`,
+                        } as any);
+                    }
                 } else {
-                    // Pour les tableaux non-fichiers, on utilise aussi la notation "repeat keys"
-                    // ou on laisse le backend gérer. Pour Express/body-parser simple, repeat keys est souvent mieux.
-                    // Mais attention, si c'est un tableau de strings, on peut juste append.
+                    // Non-fichier : repeat keys
                     formData.append(key, item);
                 }
-            });
+            }
         }
         // Cas d'un fichier seul (uri string ou objet avec uri)
         else if (
-            (typeof value === 'string' && (value.startsWith('file://') || value.startsWith('content://') || value.startsWith('blob:'))) ||
-            (typeof value === 'object' && value !== null && typeof value.uri === 'string' && (value.uri.startsWith('file://') || value.uri.startsWith('content://') || value.uri.startsWith('blob:')))
+            (typeof value === 'string' && (value.startsWith('file://') || value.startsWith('content://') || value.startsWith('blob:') || value.startsWith('data:'))) ||
+            (typeof value === 'object' && value !== null && typeof value.uri === 'string' && (value.uri.startsWith('file://') || value.uri.startsWith('content://') || value.uri.startsWith('blob:') || value.uri.startsWith('data:')))
         ) {
             const uri = typeof value === 'string' ? value : value.uri;
-            formData.append(key, {
-                uri: (Platform.OS === 'android') ? uri : (uri.startsWith('blob:') ? uri : uri.replace('file://', '')),
-                type: 'image/jpeg',
-                name: `${key}.jpg`,
-            } as any);
+
+            if (Platform.OS === 'web') {
+                try {
+                    const response = await fetch(uri);
+                    const blob = await response.blob();
+                    formData.append(key, blob, `image_${Date.now()}.jpg`);
+                } catch (e) {
+                    console.error("Erreur conversion Blob Web (Single):", e);
+                }
+            } else {
+                formData.append(key, {
+                    uri: (Platform.OS === 'android') ? uri : uri.replace('file://', ''),
+                    type: 'image/jpeg', // Mimetype par défaut
+                    name: `${key}.jpg`,
+                } as any);
+            }
         }
         // Cas d'un objet (ex: contact) qui n'est pas un fichier
         else if (typeof value === 'object' && value !== null) {
@@ -52,7 +79,7 @@ export const toFormData = (data: Record<string, any>): FormData => {
         else {
             formData.append(key, value);
         }
-    });
+    }
 
     return formData;
 };

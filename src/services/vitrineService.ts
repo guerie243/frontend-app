@@ -50,7 +50,7 @@ export const vitrineService = {
     // Fonction pour récupérer une vitrine spécifique en utilisant son slug. Retourne l'objet vitrine.
 
     createVitrine: async (data: Partial<Vitrine>) => {
-        const payload = hasFiles(data) ? toFormData(data) : data;
+        const payload = hasFiles(data) ? await toFormData(data) : data;
         const config = hasFiles(data) ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
 
         const response = await api.post<Vitrine>('/vitrines', payload, config);
@@ -59,7 +59,7 @@ export const vitrineService = {
     // Fonction pour créer une nouvelle vitrine (`POST`). Prend les données partielles et retourne la vitrine créée.
 
     updateVitrine: async (slug: string, data: Partial<Vitrine>) => {
-        const payload = hasFiles(data) ? toFormData(data) : data;
+        const payload = hasFiles(data) ? await toFormData(data) : data;
         const config = hasFiles(data) ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
 
         const response = await api.patch<{ success: boolean; vitrine: Vitrine }>(

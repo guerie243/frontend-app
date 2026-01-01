@@ -43,7 +43,7 @@ export const annonceService = {
     // Fonction pour récupérer une seule annonce en utilisant son slug. Retourne l'objet annonce.
 
     createAnnonce: async (data: Partial<Annonce>) => {
-        const payload = hasFiles(data) ? toFormData(data) : data;
+        const payload = hasFiles(data) ? await toFormData(data) : data;
         const config = hasFiles(data) ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
 
         const response = await api.post<{ success: boolean; annonce: Annonce }>('/annonces', payload, config);
@@ -52,7 +52,7 @@ export const annonceService = {
     // Fonction pour créer une nouvelle annonce (`POST`). Prend les données partielles en entrée et retourne l'annonce créée.
 
     updateAnnonce: async (slug: string, data: Partial<Annonce>) => {
-        const payload = hasFiles(data) ? toFormData(data) : data;
+        const payload = hasFiles(data) ? await toFormData(data) : data;
         const config = hasFiles(data) ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
 
         const response = await api.patch<{ success: boolean; annonce: Annonce }>(`/annonces/${slug}`, payload, config);
