@@ -7,9 +7,9 @@
  *  * Principe : Le contenu est public, seules les actions sont protégées
  */
 
-import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { DeviceEventEmitter } from 'react-native';
+import { storage } from '../utils/storage';
 
 // Bloc de documentation expliquant la refonte pour le support du Mode Invité 
 // et l'importation des dépendances React et Expo SecureStore pour le stockage sécurisé.
@@ -64,8 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
          */
         const bootstrapAsync = async () => {
             try {
-                const storedToken = await SecureStore.getItemAsync('userToken');
-                const storedUserData = await SecureStore.getItemAsync('userData');
+                const storedToken = await storage.getItem('userToken');
+                const storedUserData = await storage.getItem('userData');
 
                 if (storedToken && storedUserData) {
                     setJwt(storedToken);
@@ -110,8 +110,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const login = async (token: string, userData: User) => {
         setIsLoading(true);
         try {
-            await SecureStore.setItemAsync('userToken', token);
-            await SecureStore.setItemAsync('userData', JSON.stringify(userData));
+            await storage.setItem('userToken', token);
+            await storage.setItem('userData', JSON.stringify(userData));
 
             setJwt(token);
             setUser(userData);
@@ -136,8 +136,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = async () => {
         setIsLoading(true);
         try {
-            await SecureStore.deleteItemAsync('userToken');
-            await SecureStore.deleteItemAsync('userData');
+            await storage.deleteItem('userToken');
+            await storage.deleteItem('userData');
 
             setJwt(null);
             setUser(null);

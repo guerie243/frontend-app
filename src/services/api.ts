@@ -9,8 +9,8 @@
  */
 
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import { Alert, DeviceEventEmitter } from 'react-native';
+import { storage } from '../utils/storage';
 
 import { ENV } from '../config/env';
 
@@ -39,7 +39,7 @@ const api = axios.create({
 api.interceptors.request.use(
     async (config) => {
         try {
-            const token = await SecureStore.getItemAsync('userToken');
+            const token = await storage.getItem('userToken');
 
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
@@ -82,7 +82,7 @@ api.interceptors.response.use(
 
             try {
                 // Vérifier si un token existe
-                const token = await SecureStore.getItemAsync('userToken');
+                const token = await storage.getItem('userToken');
 
                 if (token) {
                     /**
@@ -92,8 +92,8 @@ api.interceptors.response.use(
                     console.log('Token expiré détecté - Retour au mode invité');
 
                     // Suppression du token expiré
-                    await SecureStore.deleteItemAsync('userToken');
-                    await SecureStore.deleteItemAsync('userData');
+                    await storage.deleteItem('userToken');
+                    await storage.deleteItem('userData');
 
                     // Message informatif
                     Alert.alert(

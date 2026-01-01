@@ -88,6 +88,7 @@ export const SimpleSelect: React.FC<SimpleSelectProps> = ({
             ]}
             onPress={() => {
                 onChange(item.slug);
+                if (onToggleOpen) onToggleOpen(false);
                 setOpenDropdown(false);
             }}
         >

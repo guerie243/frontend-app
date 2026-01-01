@@ -15,10 +15,10 @@ export const toFormData = (data: Record<string, any>): FormData => {
         // Cas des tableaux (souvent pour les images)
         if (Array.isArray(value)) {
             value.forEach((item, index) => {
-                if (typeof item === 'string' && (item.startsWith('file://') || item.startsWith('content://'))) {
+                if (typeof item === 'string' && (item.startsWith('file://') || item.startsWith('content://') || item.startsWith('blob:'))) {
                     // C'est un fichier local
                     formData.append(key, {
-                        uri: Platform.OS === 'android' ? item : item.replace('file://', ''),
+                        uri: (Platform.OS === 'android') ? item : (item.startsWith('blob:') ? item : item.replace('file://', '')),
                         type: 'image/jpeg',
                         name: `${key}_${index}.jpg`,
                     } as any);
@@ -28,9 +28,9 @@ export const toFormData = (data: Record<string, any>): FormData => {
             });
         }
         // Cas d'un fichier seul (uri string)
-        else if (typeof value === 'string' && (value.startsWith('file://') || value.startsWith('content://'))) {
+        else if (typeof value === 'string' && (value.startsWith('file://') || value.startsWith('content://') || value.startsWith('blob:'))) {
             formData.append(key, {
-                uri: Platform.OS === 'android' ? value : value.replace('file://', ''),
+                uri: (Platform.OS === 'android') ? value : (value.startsWith('blob:') ? value : value.replace('file://', '')),
                 type: 'image/jpeg',
                 name: `${key}.jpg`,
             } as any);

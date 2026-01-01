@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { storage } from '../utils/storage';
 import { lightColors, darkColors, typography, spacing, borderRadius } from '../config/theme';
 
 type ThemeType = 'light' | 'dark';
@@ -24,16 +24,16 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const systemScheme = useColorScheme();
-    const [themeType, setThemeType] = useState<ThemeType>('dark'); 
+    const [themeType, setThemeType] = useState<ThemeType>('dark');
 
     useEffect(() => {
         const loadTheme = async () => {
             try {
-                const storedTheme = await SecureStore.getItemAsync('appTheme');
+                const storedTheme = await storage.getItem('appTheme');
                 if (storedTheme === 'light' || storedTheme === 'dark') {
                     setThemeType(storedTheme);
                 } else if (systemScheme) {
-                    
+
                 }
             } catch (error) {
                 console.error('Failed to load theme', error);
@@ -47,13 +47,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const toggleTheme = async () => {
         const newTheme = themeType === 'dark' ? 'light' : 'dark';
         setThemeType(newTheme);
-        await SecureStore.setItemAsync('appTheme', newTheme);
+        await storage.setItem('appTheme', newTheme);
     };
     // Fonction `toggleTheme` : Inverse le thème actuel ('light'/'dark'), met à jour l'état et stocke la nouvelle préférence.
 
     const setTheme = async (type: ThemeType) => {
         setThemeType(type);
-        await SecureStore.setItemAsync('appTheme', type);
+        await storage.setItem('appTheme', type);
     };
     // Fonction `setTheme` : Définit explicitement le type de thème, met à jour l'état et stocke la préférence.
 

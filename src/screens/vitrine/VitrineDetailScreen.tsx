@@ -69,8 +69,8 @@ export const VitrineDetailScreen = () => {
 
     // --- Identification du Propriétaire ---
     // On compare l'ID utilisateur (si connecté) avec l'ownerId de la vitrine
-    const currentUserId = user?.userId || user?.id || user?._id;
-    const isOwner = isAuthenticated && displayedVitrine && String(currentUserId) === String(displayedVitrine.ownerId);
+    const currentUserId = user?.userId;
+    const isOwner = user && displayedVitrine && (user.userId === displayedVitrine.owner);
 
     // --- LOGIQUE REFRESH ---
     const onRefresh = useCallback(async () => {
@@ -180,17 +180,22 @@ export const VitrineDetailScreen = () => {
                         marginBottom: 20
                     }}>
                         <TouchableOpacity
-                            onPress={() => navigation.navigate('Settings')}
+                            activeOpacity={0.7}
+                            onPress={() => {
+                                console.log('Guest navigating to Settings...');
+                                navigation.navigate('Settings');
+                            }}
                             style={{
                                 padding: 8,
                                 borderRadius: 20,
-                                backgroundColor: theme.colors.border + '40'
+                                backgroundColor: theme.colors.border + '40',
+                                zIndex: 1000 // Ensure it's on top
                             }}
                         >
                             <Ionicons name="settings-outline" size={24} color={theme.colors.text} />
                         </TouchableOpacity>
                     </View>
-                    <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20, marginTop: -120 }}>
+                    <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20 }}>
                         <GuestPrompt message="Connectez-vous pour voir votre vitrine" variant="card" />
                     </View>
                 </ScreenWrapper>
@@ -231,9 +236,8 @@ export const VitrineDetailScreen = () => {
                 {isOwner ? (
                     // OWNER: Uploaders
                     <ImageUploadCover
-                        initialImage={currentVitrine.banner || currentVitrine.coverImage}
+                        initialImage={displayedVitrine.coverImage}
                         height={200}
-                        uploadFolderPath="vitrine_covers/"
                         onUploadSuccess={handleCoverUploadSuccess}
                         onImagePress={(url) => setPreviewImage({ visible: true, url })}
                     />
@@ -268,9 +272,8 @@ export const VitrineDetailScreen = () => {
                     {isOwner ? (
                         // OWNER: Avatar Uploader
                         <ImageUploadAvatar
-                            initialImage={currentVitrine.logo || currentVitrine.avatar}
-                            size={140}
-                            uploadFolderPath="vitrine_logos/"
+                            initialImage={displayedVitrine.logo}
+                            size={100}
                             onUploadSuccess={handleAvatarUploadSuccess}
                             onImagePress={(url) => setPreviewImage({ visible: true, url })}
                         />

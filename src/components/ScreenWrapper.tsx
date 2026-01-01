@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, StatusBar, ViewStyle } from 'react-native';
+import { View, StyleSheet, StatusBar, ViewStyle, StyleProp } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 
 interface ScreenWrapperProps {
     children: React.ReactNode;
-    style?: ViewStyle;
+    style?: StyleProp<ViewStyle>;
     withScrollView?: boolean;
 }
 

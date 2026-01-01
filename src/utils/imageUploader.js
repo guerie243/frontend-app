@@ -1,4 +1,5 @@
 import * as ImageManipulator from 'expo-image-manipulator';
+import { Platform } from 'react-native';
 
 /**
  * Compresse une image localement et retourne l'URI locale.
@@ -14,11 +15,23 @@ export async function compressImage(imageUri) {
 
   console.log("Compression de l'image...");
 
-  const manipulationResult = await ImageManipulator.manipulateAsync(
+  // Sur le Web, la manipulation d'image peut être lente. 
+  // On ajoute un timeout de sécurité pour éviter de bloquer l'UI indéfiniment.
+  const compressPromise = ImageManipulator.manipulateAsync(
     imageUri,
     [{ resize: { width: 1000 } }], // Redimensionnement raisonnable
     { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
   );
 
-  return manipulationResult.uri;
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Timeout de compression (15s) dépassé")), 15000)
+  );
+
+  try {
+    const manipulationResult = await Promise.race([compressPromise, timeoutPromise]);
+    return manipulationResult.uri;
+  } catch (error) {
+    console.warn("Échec ou timeout de compression, utilisation de l'image originale:", error);
+    return imageUri; // Fallback sur l'originale si la compression échoue/timeout
+  }
 }

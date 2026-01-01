@@ -74,8 +74,15 @@ export const RegisterScreen = () => {
 
             if (registerResponse.status === 201) {
                 const { token, user } = registerResponse.data;
-                // Le backend renvoie maintenant l'objet user complet (avec userId, username, etc.)
+                console.log('Registration success, logging in...');
                 await login(token, user);
+                console.log('Logged in, showing success alert...');
+                Alert.alert('Succès', 'Inscription réussie !');
+                console.log('Resetting navigation to MainTabs...');
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'MainTabs' }],
+                });
             } else {
                 Alert.alert('Échec', 'Impossible de créer votre compte.');
             }
@@ -181,7 +188,7 @@ export const RegisterScreen = () => {
                                 <CustomButton
                                     title="S'inscrire"
                                     onPress={handleRegister}
-                                    isLoading={false}
+                                    isLoading={isLoading}
                                     style={[styles.registerButton, { backgroundColor: theme.colors.primary }]}
                                 />
 

@@ -73,12 +73,11 @@ export default function ImagePictureUploader({
                     selectedAssets = selectedAssets.slice(0, remainingSlots);
                 }
 
-                const newImages = await Promise.all(
-                    selectedAssets.map(async (asset) => {
-                        const compressedUri = await compressImage(asset.uri);
-                        return { uri: compressedUri, id: generateId() };
-                    })
-                );
+                const newImages: ImageItem[] = [];
+                for (const asset of selectedAssets) {
+                    const compressedUri = await compressImage(asset.uri);
+                    newImages.push({ uri: compressedUri, id: generateId() });
+                }
                 setImages((prev) => [...prev, ...newImages]);
             }
         } catch (error) {

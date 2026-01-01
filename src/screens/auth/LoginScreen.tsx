@@ -68,7 +68,11 @@ export const LoginScreen = () => {
             const response = await api.post('/users/login', { identifier, password });
 
             if (response.status === 200) {
+                console.log('Login response status:', response.status);
                 await login(response.data.token, response.data.user);
+                console.log('Login state updated, showing alert...');
+                Alert.alert('Succès', 'Connexion réussie !');
+                console.log('Resetting navigation to MainTabs...');
                 navigation.reset({
                     index: 0,
                     routes: [{ name: 'MainTabs' }],
@@ -140,7 +144,7 @@ export const LoginScreen = () => {
                                 <CustomButton
                                     title="Se Connecter"
                                     onPress={handleLogin}
-                                    isLoading={false}
+                                    isLoading={isLoading}
                                     style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
                                 />
 

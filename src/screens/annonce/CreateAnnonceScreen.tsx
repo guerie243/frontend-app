@@ -307,7 +307,7 @@ export const CreateAnnonceScreen = () => {
                         <CustomInput
                             label="Lieux (optionnel)"
                             placeholder="ex: Lubumbashi, Kinshasa, Kolwezi (séparés par des virgules)"
-                            asa value={locations}
+                            value={locations}
                             onChangeText={setLocations}
                             editable={!isFormDisabled}
                         />
