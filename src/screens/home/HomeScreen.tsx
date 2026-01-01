@@ -534,7 +534,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     },
     feedCardContainer: {
         width: SCREEN_WIDTH,
-        alignItems: 'flex-start',
+        // alignItems: 'flex-start', // REMOVED to allow stretch
     },
     scrollTopButton: {
         position: 'absolute',
