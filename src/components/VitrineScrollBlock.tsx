@@ -59,9 +59,9 @@ export const VitrineScrollBlock: React.FC<VitrineScrollBlockProps> = ({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                {vitrines.slice(0, 6).map((vitrine) => (
+                {vitrines.slice(0, 6).map((vitrine, index) => (
                     <VitrineCard
-                        key={vitrine.vitrineId}
+                        key={vitrine.vitrineId || vitrine.slug || `vit-${index}`}
                         vitrine={vitrine}
                         onPress={() => onVitrinePress(vitrine.slug)}
                         variant="scroll"

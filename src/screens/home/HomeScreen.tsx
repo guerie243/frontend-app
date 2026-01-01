@@ -408,7 +408,10 @@ export const HomeScreen = () => {
                 ref={flatListRef}
                 data={combinedData}
                 renderItem={renderItem}
-                keyExtractor={(item, index) => item.slug || item.type || `index-${index}`}
+                keyExtractor={(item, index) => {
+                    if (item.type === 'VITRINE_BLOCK') return `vitrine-block-${index}`;
+                    return item.slug || item.type || `index-${index}`;
+                }}
 
                 stickyHeaderIndices={stickyIndices}
 
