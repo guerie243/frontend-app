@@ -292,13 +292,13 @@ export const CreateAnnonceScreen = () => {
                                 placeholder="Description de l'annonce"
                                 value={description}
                                 editable={false}
-                                style={styles.textArea}
+                                // Suppression du style textArea qui causait un chevauchement (195px)
                             />
                         </Pressable>
 
                         <CustomInput
                             label="Lieux (optionnel)"
-                            placeholder="ex: Paris, Lyon, Marseille (séparés par des virgules)"
+                            placeholder="ex: Lubumbashi, in, M (séparés par des virgules)"
                             value={locations}
                             onChangeText={setLocations}
                             editable={!isFormDisabled}

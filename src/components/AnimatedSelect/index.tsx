@@ -101,9 +101,11 @@ export const SimpleSelect: React.FC<SimpleSelectProps> = ({
 
     return (
         // 🛑 CORRECTION 1.3 : Z-Index dynamique et position relative forcée pour le contexte
-        <View style={[styles.container, style, { // ⭐ AJOUT : style transmis ici pour appliquer flex: 1 et height: 50 au conteneur principal
-            zIndex: openDropdown ? 9999 : zIndex,
+        <View style={[styles.container, style, {
+            zIndex: openDropdown ? 9999 : (zIndex || 10),
             position: 'relative',
+            // Pour le Web, on s'assure que l'élément n'est pas coupé par ses parents
+            overflow: Platform.OS === 'web' ? 'visible' : 'hidden',
         }]}>
             <CustomInput
                 label={label}
@@ -256,7 +258,7 @@ const styles = StyleSheet.create({
     dropdownContainer: {
         position: 'absolute',
         top: 60,
-        zIndex: 9999,
+        zIndex: 10000, // Supérieur au conteneur
         width: '100%',
         backgroundColor: "#fff",
         borderRadius: 8,
@@ -264,11 +266,12 @@ const styles = StyleSheet.create({
         borderColor: "#ccc",
         maxHeight: 250,
         overflow: 'hidden',
-        elevation: 5,
+        // Ombre plus prononcée pour aider visuellement sur le web
+        elevation: 10,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
     },
 
     dropdownScrollView: {

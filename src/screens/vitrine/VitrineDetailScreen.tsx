@@ -309,7 +309,14 @@ export const VitrineDetailScreen = () => {
                 <View style={[styles.floatingHeader, { justifyContent: 'flex-end' }]}>
                     {/* OWNER ONLY: Settings Button */}
                     {isOwner && (
-                        <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={[styles.actionButton, { backgroundColor: 'rgba(0,0,0,0.4)' }]}>
+                        <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => {
+                                console.log('Navigating to Settings...');
+                                navigation.navigate('Settings');
+                            }}
+                            style={[styles.actionButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+                        >
                             <Ionicons name="settings-outline" size={24} color={theme.colors.surface} />
                         </TouchableOpacity>
                     )}
@@ -319,7 +326,15 @@ export const VitrineDetailScreen = () => {
             {/* 2. Bloc Info */}
             <View style={styles.infoBlock}>
                 <Text style={[styles.title, { color: theme.colors.text }]}>{currentVitrine.name}</Text>
-                <Text style={[styles.category, { color: theme.colors.primary, marginBottom: 8 }]}>{currentVitrine.category || currentVitrine.type}</Text>
+                <Text style={[styles.category, { color: theme.colors.primary, marginBottom: 8 }]}>
+                    {(() => {
+                        const rawType = currentVitrine.type;
+                        const rawCategory = currentVitrine.category;
+                        if (rawType && rawType.toLowerCase() !== 'general' && rawType.toLowerCase() !== 'général') return rawType;
+                        if (rawCategory && rawCategory.toLowerCase() !== 'general' && rawCategory.toLowerCase() !== 'général') return rawCategory;
+                        return rawType || rawCategory || 'Général';
+                    })()}
+                </Text>
 
                 <Text style={[styles.slug, { color: theme.colors.textTertiary, marginBottom: currentVitrine.description ? 16 : 24 }]}>
                     {currentVitrine.slug}
