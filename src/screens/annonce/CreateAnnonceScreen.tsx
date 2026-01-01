@@ -218,7 +218,7 @@ export const CreateAnnonceScreen = () => {
                     )}
 
                     {/* 1. UPLOADER D'IMAGE (Déplacé en premier) */}
-                    <View style={styles.imageUploaderContainer} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
+                    <View style={[styles.imageUploaderContainer, { zIndex: 100 }]} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
                         <Text style={[styles.imageUploaderTitle, { color: theme.colors.text }]}>
                             Photos (2 à 5 images)*
                         </Text>
@@ -226,7 +226,7 @@ export const CreateAnnonceScreen = () => {
                     </View>
 
                     {/* 2. BLOC TITRE/INPUT - Désactivé si un selecteur est ouvert */}
-                    <View pointerEvents={isSelectOpen ? 'none' : 'auto'}>
+                    <View style={{ zIndex: 90 }} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
                         <CustomInput
                             label="Titre du produit *"
                             placeholder="ex: T-Shirt Premium"
@@ -237,8 +237,11 @@ export const CreateAnnonceScreen = () => {
                     </View>
 
                     {/* 3. CASCADING SELECTS (Catégorie) - Gère son état isSelectOpen */}
-                    <View style={styles.categoryContainer}>
-
+                    <View style={[styles.categoryContainer, { zIndex: 80 }]}>
+                        {/* 
+                            IMPORTANT: On ne met PAS pointerEvents="none" ici, 
+                            sinon on ne peut plus interagir avec le sélecteur ouvert (Deadlock).
+                        */}
                         <CascadingSelects
                             parentLabel="Catégorie Principale *"
                             childLabel="Sous-catégorie (Optionnel)"
@@ -256,7 +259,12 @@ export const CreateAnnonceScreen = () => {
                     </View>
 
                     {/* 4. PRIX / DEVISE */}
-                    <View style={styles.priceCurrencyWrapper}>
+                    <View style={[styles.priceCurrencyWrapper, { zIndex: 70 }]}>
+                        {/* 
+                            On ne bloque pas le conteneur parent pour permettre l'interaction avec le SimpleSelect.
+                            On bloque l'input de prix individuellement via pointerEvents si besoin, 
+                            mais ici 'editable' suffit déjà pour CustomInput.
+                         */}
                         <CustomInput
                             // Le prix est rendu optionnel ici
                             label="Prix (Optionnel)"
@@ -264,7 +272,7 @@ export const CreateAnnonceScreen = () => {
                             value={price}
                             onChangeText={setPrice}
                             keyboardType="numeric"
-                            editable={!isLoading}
+                            editable={!isLoading && !isSelectOpen}
                             inputWrapperStyle={styles.priceInput}
                         />
 
@@ -281,7 +289,7 @@ export const CreateAnnonceScreen = () => {
                     </View>
 
                     {/* 5. BLOC DESCRIPTION/BOUTON - Désactivé si un selecteur est ouvert */}
-                    <View pointerEvents={isSelectOpen ? 'none' : 'auto'}>
+                    <View style={{ zIndex: 60 }} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
 
                         <Pressable onPress={() => {
                             setTempDescription(description);
@@ -292,14 +300,14 @@ export const CreateAnnonceScreen = () => {
                                 placeholder="Description de l'annonce"
                                 value={description}
                                 editable={false}
-                                // Suppression du style textArea qui causait un chevauchement (195px)
+                            // Suppression du style textArea qui causait un chevauchement (195px)
                             />
                         </Pressable>
 
                         <CustomInput
                             label="Lieux (optionnel)"
-                            placeholder="ex: Lubumbashi, in, M (séparés par des virgules)"
-                            value={locations}
+                            placeholder="ex: Lubumbashi, Kinshasa, Kolwezi (séparés par des virgules)"
+                            asa value={locations}
                             onChangeText={setLocations}
                             editable={!isFormDisabled}
                         />
@@ -308,8 +316,8 @@ export const CreateAnnonceScreen = () => {
                             title="Créer l'Annonce"
                             onPress={handleSubmit}
                             isLoading={isLoading}
-                            // Désactiver si le formulaire est en cours de soumission ou si un sélecteur est ouvert
-                            disabled={isFormDisabled}
+                            // On bloque le bouton si on charge OU si un sélecteur est ouvert
+                            disabled={isLoading || isSelectOpen}
                             style={styles.button}
                         />
                     </View>
@@ -407,11 +415,10 @@ const styles = StyleSheet.create({
     },
     priceInput: {
         marginBottom: 0,
-        height: 50,
     },
     currencySelect: {
         marginBottom: 0,
-        height: 65,
+        // Suppression de la hauteur fixe qui "rongeait" le champ
     },
     // FIN STYLES PRIX/DEVISE
 

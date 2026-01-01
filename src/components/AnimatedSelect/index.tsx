@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, Image, Pressable, SectionList, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Image, Platform, Pressable, SectionList, StyleSheet, Text, View } from "react-native";
 import { CustomInput } from "../CustomInput";
 
 // --- Interfaces de Données ---
@@ -59,13 +59,8 @@ export const SimpleSelect: React.FC<SimpleSelectProps> = ({
             duration: 200,
             easing: Easing.out(Easing.ease),
             useNativeDriver: false,
-        }).start(() => {
-            if (onToggleOpen) {
-                // Notifie le composant parent de l'état d'ouverture pour gérer le ScrollView
-                onToggleOpen(openDropdown);
-            }
-        });
-    }, [openDropdown, onToggleOpen, animation]);
+        }).start();
+    }, [openDropdown, animation]);
 
     const rotateIcon = animation.interpolate({
         inputRange: [0, 1],
@@ -74,7 +69,9 @@ export const SimpleSelect: React.FC<SimpleSelectProps> = ({
 
     const handlePress = () => {
         if (!disabled) {
-            setOpenDropdown(!openDropdown);
+            const nextState = !openDropdown;
+            if (onToggleOpen) onToggleOpen(nextState);
+            setOpenDropdown(nextState);
         }
     };
 
@@ -104,8 +101,7 @@ export const SimpleSelect: React.FC<SimpleSelectProps> = ({
         <View style={[styles.container, style, {
             zIndex: openDropdown ? 9999 : (zIndex || 10),
             position: 'relative',
-            // Pour le Web, on s'assure que l'élément n'est pas coupé par ses parents
-            overflow: Platform.OS === 'web' ? 'visible' : 'hidden',
+            overflow: 'visible',
         }]}>
             <CustomInput
                 label={label}
