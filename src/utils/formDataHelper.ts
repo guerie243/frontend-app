@@ -25,8 +25,10 @@ export const toFormData = (data: Record<string, any>): FormData => {
                         name: `${key}_${index}.jpg`,
                     } as any);
                 } else {
-                    // Pour les tableaux non-fichiers, on utilise une notation compatible PHP/Express
-                    formData.append(`${key}[${index}]`, item);
+                    // Pour les tableaux non-fichiers, on utilise aussi la notation "repeat keys"
+                    // ou on laisse le backend gérer. Pour Express/body-parser simple, repeat keys est souvent mieux.
+                    // Mais attention, si c'est un tableau de strings, on peut juste append.
+                    formData.append(key, item);
                 }
             });
         }
