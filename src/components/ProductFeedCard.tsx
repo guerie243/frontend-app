@@ -234,7 +234,8 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
 const createStyles = (theme: any) => StyleSheet.create({
     card: {
         borderRadius: theme.borderRadius.l,
-        marginHorizontal: theme.spacing.s,
+        // Espace très fin de part et d'autre (ex: 4px)
+        marginHorizontal: 4,
         marginVertical: theme.spacing.s,
         overflow: 'hidden',
         // Minimalist border for dark mode hierarchy specifically

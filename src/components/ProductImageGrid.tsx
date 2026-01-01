@@ -3,6 +3,8 @@ import { View, Image, StyleSheet, Dimensions, Text, TouchableOpacity, Animated, 
 import { DEFAULT_IMAGES } from '../constants/images';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+// Ajustement pour les marges du ProductFeedCard (4px * 2 = 8px)
+const CARD_WIDTH = SCREEN_WIDTH - 8;
 const MAX_GRID_HEIGHT = 600;
 
 interface ProductImageGridProps {
@@ -129,7 +131,7 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
         const r3 = ratios[2] || 1;
 
         if (images.length === 1) {
-            const h = SCREEN_WIDTH / r1;
+            const h = CARD_WIDTH / r1;
             const finalHeight = Math.min(h, MAX_GRID_HEIGHT);
 
             return (
@@ -140,7 +142,7 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
         }
 
         if (images.length === 2) {
-            const h = SCREEN_WIDTH / (r1 + r2);
+            const h = CARD_WIDTH / (r1 + r2);
             const finalHeight = Math.min(h, MAX_GRID_HEIGHT);
 
             return (
@@ -156,8 +158,8 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
             );
         }
 
-        const hTop = SCREEN_WIDTH / r1;
-        const hBottom = SCREEN_WIDTH / (r2 + r3);
+        const hTop = CARD_WIDTH / r1;
+        const hBottom = CARD_WIDTH / (r2 + r3);
 
         let finalHTop = hTop;
         let finalHBottom = hBottom;
