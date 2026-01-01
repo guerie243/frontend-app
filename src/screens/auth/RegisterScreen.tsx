@@ -8,7 +8,6 @@ import {
     ScrollView,
     KeyboardAvoidingView,
     Platform,
-    TouchableWithoutFeedback,
     Keyboard
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -96,103 +95,105 @@ export const RegisterScreen = () => {
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={{ flex: 1 }}
                 >
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                            <View style={styles.content}>
-                                <Text style={[styles.title, { color: theme.colors.text }]}>Créer un Compte</Text>
-                                <Text style={styles.subtitle}>Rejoignez-nous aujord&apos;hui !</Text>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <View style={styles.content}>
+                            <Text style={[styles.title, { color: theme.colors.text }]}>Créer un Compte</Text>
+                            <Text style={styles.subtitle}>Rejoignez-nous aujord&apos;hui !</Text>
 
-                                <View style={styles.form}>
+                            <View style={styles.form}>
+                                <CustomInput
+                                    placeholder="Nom Complet"
+                                    value={profileName}
+                                    onChangeText={setProfileName}
+                                />
+
+                                {useEmailForLogin ? (
                                     <CustomInput
-                                        placeholder="Nom Complet"
-                                        value={profileName}
-                                        onChangeText={setProfileName}
+                                        placeholder="Adresse E-mail"
+                                        value={email}
+                                        onChangeText={setEmail}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
                                     />
-
-                                    {useEmailForLogin ? (
-                                        <CustomInput
-                                            placeholder="Adresse E-mail"
-                                            value={email}
-                                            onChangeText={setEmail}
-                                            keyboardType="email-address"
-                                            autoCapitalize="none"
-                                        />
-                                    ) : (
-                                        <CustomInput
-                                            placeholder="Numéro de Téléphone"
-                                            value={phoneNumber}
-                                            onChangeText={setPhoneNumber}
-                                            keyboardType="phone-pad"
-                                        />
-                                    )}
-
+                                ) : (
                                     <CustomInput
-                                        placeholder="Mot de Passe"
-                                        value={password}
-                                        onChangeText={setPassword}
-                                        secureTextEntry={!isPasswordVisible}
-                                        RightComponent={
-                                            <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={{ padding: 8 }}>
-                                                <Ionicons
-                                                    name={isPasswordVisible ? 'eye-off' : 'eye'}
-                                                    size={20}
-                                                    color={theme.colors.textSecondary}
-                                                />
-                                            </TouchableOpacity>
-                                        }
+                                        placeholder="Numéro de Téléphone"
+                                        value={phoneNumber}
+                                        onChangeText={setPhoneNumber}
+                                        keyboardType="phone-pad"
                                     />
+                                )}
 
-                                    <CustomInput
-                                        placeholder="Confirmer le Mot de Passe"
-                                        value={confirmPassword}
-                                        onChangeText={setConfirmPassword}
-                                        secureTextEntry={!isConfirmPasswordVisible}
-                                        style={!passwordsMatch && confirmPassword ? styles.inputError : {}}
-                                        RightComponent={
-                                            <TouchableOpacity onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)} style={{ padding: 8 }}>
-                                                <Ionicons
-                                                    name={isConfirmPasswordVisible ? 'eye-off' : 'eye'}
-                                                    size={20}
-                                                    color={theme.colors.textSecondary}
-                                                />
-                                            </TouchableOpacity>
-                                        }
-                                    />
-
-                                    {!passwordsMatch && confirmPassword.length > 0 && (
-                                        <Text style={styles.errorMessage}>
-                                            Les mots de passe ne correspondent pas.
-                                        </Text>
-                                    )}
-
-                                    <TouchableOpacity
-                                        onPress={() => setUseEmailForLogin(prev => !prev)}
-                                        style={styles.toggleContainer}
-                                    >
-                                        <Text style={styles.toggleText}>
-                                            {useEmailForLogin
-                                                ? "S'inscrire avec un Numéro de Téléphone"
-                                                : "S'inscrire avec une Adresse E-mail"}
-                                        </Text>
-                                    </TouchableOpacity>
-
-                                    <CustomButton
-                                        title="S'inscrire"
-                                        onPress={handleRegister}
-                                        isLoading={false}
-                                        style={[styles.registerButton, { backgroundColor: theme.colors.primary }]}
-                                    />
-
-                                    <View style={styles.footer}>
-                                        <Text style={styles.footerText}>Déjà un compte ? </Text>
-                                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                                            <Text style={styles.link}>Se Connecter</Text>
+                                <CustomInput
+                                    placeholder="Mot de Passe"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry={!isPasswordVisible}
+                                    RightComponent={
+                                        <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={{ padding: 8 }}>
+                                            <Ionicons
+                                                name={isPasswordVisible ? 'eye-off' : 'eye'}
+                                                size={20}
+                                                color={theme.colors.textSecondary}
+                                            />
                                         </TouchableOpacity>
-                                    </View>
+                                    }
+                                />
+
+                                <CustomInput
+                                    placeholder="Confirmer le Mot de Passe"
+                                    value={confirmPassword}
+                                    onChangeText={setConfirmPassword}
+                                    secureTextEntry={!isConfirmPasswordVisible}
+                                    style={!passwordsMatch && confirmPassword ? styles.inputError : {}}
+                                    RightComponent={
+                                        <TouchableOpacity onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)} style={{ padding: 8 }}>
+                                            <Ionicons
+                                                name={isConfirmPasswordVisible ? 'eye-off' : 'eye'}
+                                                size={20}
+                                                color={theme.colors.textSecondary}
+                                            />
+                                        </TouchableOpacity>
+                                    }
+                                />
+
+                                {!passwordsMatch && confirmPassword.length > 0 && (
+                                    <Text style={styles.errorMessage}>
+                                        Les mots de passe ne correspondent pas.
+                                    </Text>
+                                )}
+
+                                <TouchableOpacity
+                                    onPress={() => setUseEmailForLogin(prev => !prev)}
+                                    style={styles.toggleContainer}
+                                >
+                                    <Text style={styles.toggleText}>
+                                        {useEmailForLogin
+                                            ? "S'inscrire avec un Numéro de Téléphone"
+                                            : "S'inscrire avec une Adresse E-mail"}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <CustomButton
+                                    title="S'inscrire"
+                                    onPress={handleRegister}
+                                    isLoading={false}
+                                    style={[styles.registerButton, { backgroundColor: theme.colors.primary }]}
+                                />
+
+                                <View style={styles.footer}>
+                                    <Text style={styles.footerText}>Déjà un compte ? </Text>
+                                    <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                                        <Text style={styles.link}>Se Connecter</Text>
+                                    </TouchableOpacity>
                                 </View>
                             </View>
-                        </ScrollView>
-                    </TouchableWithoutFeedback>
+                        </View>
+                    </ScrollView>
                 </KeyboardAvoidingView>
             )}
         </ScreenWrapper>

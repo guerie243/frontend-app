@@ -8,7 +8,6 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    TouchableWithoutFeedback,
     Keyboard
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -95,63 +94,65 @@ export const LoginScreen = () => {
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={{ flex: 1 }}
                 >
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                            <View style={styles.content}>
-                                <Text style={[styles.title, { color: theme.colors.text }]}>Bienvenue</Text>
-                                <Text style={styles.subtitle}>Connectez-vous pour continuer</Text>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <View style={styles.content}>
+                            <Text style={[styles.title, { color: theme.colors.text }]}>Bienvenue</Text>
+                            <Text style={styles.subtitle}>Connectez-vous pour continuer</Text>
 
-                                <View style={styles.form}>
-                                    <CustomInput
-                                        placeholder={getPlaceholder()}
-                                        value={identifier}
-                                        onChangeText={setIdentifier}
-                                        keyboardType={loginMode === 1 ? 'email-address' : (loginMode === 2 ? 'phone-pad' : 'default')}
-                                        autoCapitalize={loginMode === 1 ? 'none' : 'words'}
-                                    />
+                            <View style={styles.form}>
+                                <CustomInput
+                                    placeholder={getPlaceholder()}
+                                    value={identifier}
+                                    onChangeText={setIdentifier}
+                                    keyboardType={loginMode === 1 ? 'email-address' : (loginMode === 2 ? 'phone-pad' : 'default')}
+                                    autoCapitalize={loginMode === 1 ? 'none' : 'words'}
+                                />
 
-                                    <CustomInput
-                                        placeholder="Mot de Passe"
-                                        value={password}
-                                        onChangeText={setPassword}
-                                        secureTextEntry={!isPasswordVisible}
-                                        RightComponent={
-                                            <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={{ padding: 8 }}>
-                                                <Ionicons
-                                                    name={isPasswordVisible ? 'eye-off' : 'eye'}
-                                                    size={20}
-                                                    color={theme.colors.textSecondary}
-                                                />
-                                            </TouchableOpacity>
-                                        }
-                                    />
-
-                                    <TouchableOpacity
-                                        onPress={toggleLoginMode}
-                                        style={styles.toggleContainer}
-                                    >
-                                        <Text style={styles.toggleText}>
-                                            Changer le mode de connexion
-                                        </Text>
-                                    </TouchableOpacity>
-
-                                    <CustomButton
-                                        title="Se Connecter"
-                                        onPress={handleLogin}
-                                        isLoading={false}
-                                        style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
-                                    />
-
-                                    <View style={styles.footer}>
-                                        <Text style={styles.footerText}>Pas de compte ? </Text>
-                                        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                                            <Text style={styles.link}>S&apos;inscrire</Text>
+                                <CustomInput
+                                    placeholder="Mot de Passe"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry={!isPasswordVisible}
+                                    RightComponent={
+                                        <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)} style={{ padding: 8 }}>
+                                            <Ionicons
+                                                name={isPasswordVisible ? 'eye-off' : 'eye'}
+                                                size={20}
+                                                color={theme.colors.textSecondary}
+                                            />
                                         </TouchableOpacity>
-                                    </View>
+                                    }
+                                />
+
+                                <TouchableOpacity
+                                    onPress={toggleLoginMode}
+                                    style={styles.toggleContainer}
+                                >
+                                    <Text style={styles.toggleText}>
+                                        Changer le mode de connexion
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <CustomButton
+                                    title="Se Connecter"
+                                    onPress={handleLogin}
+                                    isLoading={false}
+                                    style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
+                                />
+
+                                <View style={styles.footer}>
+                                    <Text style={styles.footerText}>Pas de compte ? </Text>
+                                    <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                                        <Text style={styles.link}>S&apos;inscrire</Text>
+                                    </TouchableOpacity>
                                 </View>
                             </View>
-                        </ScrollView>
-                    </TouchableWithoutFeedback>
+                        </View>
+                    </ScrollView>
                 </KeyboardAvoidingView>
             )}
         </ScreenWrapper>

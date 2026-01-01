@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TextInput, Text, StyleSheet, TextInputProps, ViewStyle, Pressable } from 'react-native';
+import { View, TextInput, Text, StyleSheet, TextInputProps, ViewStyle, Pressable, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 // Définition de l'interface TypeScript pour les propriétés du composant.
@@ -111,6 +111,11 @@ const createStyles = (theme: any) => StyleSheet.create({
         paddingHorizontal: 0,
         color: theme.colors.text,
         ...theme.typography.body,
+        ...Platform.select({
+            web: {
+                outlineStyle: 'none',
+            }
+        })
     },
     errorText: {
         ...theme.typography.caption,
