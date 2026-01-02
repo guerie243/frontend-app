@@ -180,7 +180,7 @@ export const VitrinePublicScreen = () => {
                 {/* Contact Info */}
                 {(currentVitrine.address || currentVitrine.contact?.email || currentVitrine.contact?.phone) && (
                     <View style={styles.contactDetailsSection}>
-                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Informations de Contact</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Infos & Bio</Text>
 
                         {currentVitrine.address && (
                             <View style={styles.infoItem}>

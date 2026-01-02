@@ -114,6 +114,7 @@ export const SettingsScreen = () => {
                 {renderSectionHeader('LÉGAL & INFO')}
                 {renderItem('Conditions d\'utilisation', () => navigation.navigate('TermsOfService'), null, 'document-text-outline')}
                 {renderItem('Politique de confidentialité', () => navigation.navigate('PrivacyPolicy'), null, 'shield-checkmark-outline')}
+                {renderItem('Nous contacter', () => navigation.navigate('ContactUs'), null, 'mail-outline')}
                 {renderItem(
                     'À propos',
                     () => { },

@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Animated,
   Image,
+  TouchableOpacity,
   Dimensions,
   ScrollView // Nécessaire pour les types et Animated.ScrollView
 } from 'react-native';
@@ -18,6 +19,7 @@ const SPACING = (SCREEN_WIDTH - ITEM_WIDTH) / 2; // Marge/Espacement nécessaire
 interface ProductCarouselProps {
   height: Animated.AnimatedInterpolation<number> | Animated.Value | number;
   images: any[];
+  onImagePress?: (uri: string) => void;
 }
 
 // Fonction utilitaire de normalisation (inchangée)
@@ -41,7 +43,7 @@ const normalizeAndFlattenImages = (data: any[]): { uri: string }[] => {
   return sources;
 };
 
-export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images = [] }) => {
+export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images = [], onImagePress }) => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -131,8 +133,10 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
 
           return (
             // La marge à droite est l'espacement entre les items.
-            <View
+            <TouchableOpacity
               key={index}
+              activeOpacity={onImagePress ? 0.9 : 1}
+              onPress={() => onImagePress?.(imageUri)}
               style={[
                 styles.slide,
                 {
@@ -149,7 +153,7 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
                   setImageErrors(prev => new Set(prev).add(index));
                 }}
               />
-            </View>
+            </TouchableOpacity>
           );
         })}
       </Animated.ScrollView>

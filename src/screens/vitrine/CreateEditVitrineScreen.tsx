@@ -126,8 +126,8 @@ export const CreateEditVitrineScreen = () => {
                 />
 
                 <CustomInput
-                    label="Description"
-                    placeholder="Décrivez votre boutique..."
+                    label="Bio"
+                    placeholder="Écrivez une courte bio..."
                     value={description}
                     onChangeText={setDescription}
                     multiline

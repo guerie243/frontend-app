@@ -31,6 +31,7 @@ import { EditCompteFieldScreen } from '../screens/settings/EditCompteFieldScreen
 import { SettingsScreen } from '../screens/settings/SettingsScreen';
 import { PrivacyPolicyScreen } from '../screens/settings/PrivacyPolicyScreen';
 import { TermsOfServiceScreen } from '../screens/settings/TermsOfServiceScreen';
+import { ContactUsScreen } from '../screens/settings/ContactUsScreen';
 import { LinkingHandler } from './LinkingHandler';
 
 const Stack = createNativeStackNavigator();
@@ -76,6 +77,7 @@ export const AppStack = () => {
                 <Stack.Screen name="EditCompteField" component={EditCompteFieldScreen} />
                 <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
                 <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+                <Stack.Screen name="ContactUs" component={ContactUsScreen} />
             </Stack.Navigator>
         </>
     );

@@ -44,7 +44,7 @@ export const EditVitrineFieldScreen = () => {
 
         const trimmedValue = value.trim();
 
-        if (!trimmedValue && field !== 'description') { // Permet description vide si besoin
+        if (!trimmedValue && field !== 'description') { // Permet Bio vide si besoin
             showError(`Le champ ${label} ne peut pas être vide`);
             return;
         }

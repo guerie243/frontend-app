@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -28,6 +28,7 @@ import { StateMessage } from '../../components/StateMessage';
 import { ENV } from '../../config/env';
 import { DEFAULT_IMAGES } from '../../constants/images';
 import { useAlertService } from '../../utils/alertService';
+import { ImagePreviewModal } from '../../components/ImagePreviewModal';
 
 // Constantes pour l'animation du Bottom Sheet
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -48,6 +49,8 @@ export const AnnonceDetailScreen = () => {
     // --- États ---
     const [vitrineInfo, setVitrineInfo] = useState<any>(null);
     const [currentInfoHeight, setCurrentInfoHeight] = useState(MIN_INFO_HEIGHT);
+    const [previewVisible, setPreviewVisible] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
 
     // --- Animation ---
     const infoHeight = useRef(new Animated.Value(MIN_INFO_HEIGHT)).current;
@@ -142,6 +145,11 @@ export const AnnonceDetailScreen = () => {
         }
     };
 
+    const handleImagePress = (uri: string) => {
+        setSelectedImage(uri);
+        setPreviewVisible(true);
+    };
+
     const styles = useMemo(() => createStyles(theme), [theme]);
 
     // --- Rendu Loading / Vide ---
@@ -202,7 +210,11 @@ export const AnnonceDetailScreen = () => {
             {/* 1. Zone Image Arrière Plan (Carousel) */}
             <Animated.View style={[styles.carouselContainer, { opacity: carouselOpacity }]}>
                 {/* On donne une hauteur fixe un peu plus grande pour l'effet visuel */}
-                <ProductCarousel height={SCREEN_HEIGHT * 0.6} images={currentAnnonce.images} />
+                <ProductCarousel
+                    height={SCREEN_HEIGHT * 0.6}
+                    images={currentAnnonce.images}
+                    onImagePress={handleImagePress}
+                />
 
                 {/* Bouton retour flottant */}
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -353,6 +365,13 @@ export const AnnonceDetailScreen = () => {
                 </View>
 
             </Animated.View>
+
+            {/* Modal de prévisualisation d'image */}
+            <ImagePreviewModal
+                visible={previewVisible}
+                imageUrl={selectedImage}
+                onClose={() => setPreviewVisible(false)}
+            />
         </View>
     );
 };

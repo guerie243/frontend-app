@@ -141,7 +141,7 @@ export const VitrineModificationMain = () => {
                     {renderFieldItem('Nom', vitrine.name, 'name')}
                     {renderFieldItem('Slogan', vitrine.slug || '', 'slug')}
                     {renderFieldItem('Catégorie', vitrine.category || vitrine.type || '', 'category')}
-                    {renderFieldItem('Description', vitrine.description || '', 'description', { multiline: true })}
+                    {renderFieldItem('Bio', vitrine.description || '', 'description', { multiline: true })}
                 </View>
 
                 {/* Localisation */}

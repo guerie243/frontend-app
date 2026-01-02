@@ -89,7 +89,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        height: 50,
+        minHeight: 50,
         backgroundColor: theme.colors.surfaceLight,
         borderRadius: theme.borderRadius.m,
         paddingHorizontal: theme.spacing.m,
@@ -102,14 +102,14 @@ const createStyles = (theme: any) => StyleSheet.create({
     contentContainer: {
         flex: 1,
         flexDirection: 'row',
-        alignItems: 'center',
-        height: '100%',
+        alignItems: 'flex-start',
+        paddingVertical: theme.spacing.s,
     },
     input: {
         flex: 1,
-        height: '100%',
         paddingHorizontal: 0,
         color: theme.colors.text,
+        textAlignVertical: 'top',
         ...theme.typography.body,
         ...Platform.select({
             web: {

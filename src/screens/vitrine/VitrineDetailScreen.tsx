@@ -68,6 +68,8 @@ export const VitrineDetailScreen = () => {
         url: undefined
     });
 
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+
     // --- Identification du Propriétaire ---
     // On compare l'ID utilisateur (si connecté) avec l'ownerId de la vitrine
     // Le user peut avoir `id`, `_id` ou `userId` selon la source.
@@ -231,7 +233,7 @@ export const VitrineDetailScreen = () => {
         `J'aimerais avoir plus d'informations.\n\n` +
         `Lien de la vitrine : ${fullUrl}`;
 
-    const styles = React.useMemo(() => createStyles(theme), [theme]);
+
 
     const ListHeader = () => (
         <>
@@ -341,7 +343,7 @@ export const VitrineDetailScreen = () => {
                 {/* Contact Info */}
                 {(currentVitrine.address || currentVitrine.contact?.email || currentVitrine.contact?.phone) && (
                     <View style={styles.contactDetailsSection}>
-                        <Text style={styles.sectionTitle}>Informations de Contact</Text>
+                        <Text style={styles.sectionTitle}>Infos & Bio</Text>
 
                         {currentVitrine.address && (
                             <View style={styles.infoItem}>
