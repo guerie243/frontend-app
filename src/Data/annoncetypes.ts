@@ -1,14 +1,20 @@
 // src/data/annoncetypes.ts (CODE CORRIGÉ)
 
-import { SelectSection, SelectOption } from "../components/AnimatedSelect"; 
+import { SelectOption } from "../components/AnimatedSelect";
+
+export interface SelectSection {
+    slug: string;
+    title: string;
+    data: SelectOption[];
+}
 
 /**
  * Interface définissant la structure d'un Type d'Article/Service.
  */
 export interface AnnonceType {
-    slug: string; 
-    name: string; 
-    parentCategorySlug: string; 
+    slug: string;
+    name: string;
+    parentCategorySlug: string;
 }
 
 // Placeholder pour obtenir le nom lisible de la catégorie parente.
@@ -18,6 +24,7 @@ const PARENT_CATEGORIES_MAP: Record<string, string> = {
     'real-estate': 'Immobilier',
     'sports': 'Sports & Loisirs',
     'services': 'Services Personnels & Professionnels',
+    'digital': 'Digital & Produits Virtuels',
     'food': 'Aliments & Boissons',
     // ... ajoutez d'autres catégories parentes si nécessaire
 };
@@ -66,6 +73,12 @@ export const ANNONCE_TYPES_DISPONIBLES: AnnonceType[] = [
     { slug: 'web-graphisme', name: 'Développement Web & Graphisme', parentCategorySlug: 'services' },
     { slug: 'garde-enfants', name: 'Garde d\'enfants', parentCategorySlug: 'services' },
 
+    // --- Digital (parentCategorySlug: 'digital') ---
+    { slug: 'application', name: 'Application & Logiciel', parentCategorySlug: 'digital' },
+    { slug: 'ebook', name: 'E-book & Document', parentCategorySlug: 'digital' },
+    { slug: 'formation', name: 'Formation & Cours en ligne', parentCategorySlug: 'digital' },
+    { slug: 'abonnement', name: 'Abonnement & Service Digital', parentCategorySlug: 'digital' },
+
     // --- Aliments/Nourriture (parentCategorySlug: 'food') ---
     { slug: 'produits-frais', name: 'Produits Frais (Fruits, Légumes, etc.)', parentCategorySlug: 'food' },
     { slug: 'boissons-alcoolisees', name: 'Boissons (non/alcoolisées)', parentCategorySlug: 'food' },
@@ -81,12 +94,12 @@ export const groupAnnonceTypes = (types: AnnonceType[]): SelectSection[] => {
     // 1. Groupement par parentCategorySlug
     const grouped = types.reduce((acc, currentType) => {
         const key = currentType.parentCategorySlug;
-        
+
         // Transforme AnnonceType en SelectOption
         const option: SelectOption = {
             slug: currentType.slug,
             name: currentType.name,
-            imageUri: null, 
+            imageUri: null,
         };
 
         if (!acc[key]) {
@@ -100,7 +113,7 @@ export const groupAnnonceTypes = (types: AnnonceType[]): SelectSection[] => {
     return Object.keys(grouped).map(slug => ({
         slug: slug,
         // Utilise la map pour obtenir le nom lisible, sinon utilise le slug
-        title: PARENT_CATEGORIES_MAP[slug] || slug.replace(/-/g, ' ').toUpperCase(), 
+        title: PARENT_CATEGORIES_MAP[slug] || slug.replace(/-/g, ' ').toUpperCase(),
         // CLÉ CORRIGÉE : on utilise 'data'
         data: grouped[slug],
     }));

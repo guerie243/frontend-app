@@ -137,20 +137,18 @@ export const EditAnnonceFieldScreen = () => {
     // Rendu conditionnel du champ d'entrée
     const renderInputField = () => {
         if (field === 'category') {
-            // 💡 UTILISATION DE CASCADINGSELECTS
             return (
                 <CascadingSelects
                     parentLabel="Catégorie Principale"
-                    childLabel={label} // Utilise le label dynamique de la route pour l'enfant (Sous-catégorie)
-
+                    childLabel={label}
                     parentOptions={cascadingCategories}
                     parentValue={parentCategorySlug}
-                    onParentChange={setParentCategorySlug} // Le composant interne réinitialise l'enfant
-
+                    onParentChange={setParentCategorySlug}
                     childValue={childCategorySlug}
                     onChildChange={setChildCategorySlug}
                 />
             );
+        } else if (field === 'currency') {
             return (
                 <View style={{ zIndex: 100 }}>
                     <SimpleSelect
@@ -159,18 +157,6 @@ export const EditAnnonceFieldScreen = () => {
                         value={value.toString()}
                         onChange={(val) => setValue(val)}
                         zIndex={100}
-                    />
-                </View>
-            );
-        } else if (field === 'images') {
-            return (
-                <View style={{ flex: 1 }}>
-                    <Text style={{ marginBottom: 10, color: theme.colors.textSecondary }}>
-                        Vous pouvez ajouter ou supprimer des photos. (Min 1, Max 5)
-                    </Text>
-                    <ImageUploader
-                        images={value}
-                        setImages={setValue}
                     />
                 </View>
             );
@@ -191,7 +177,6 @@ export const EditAnnonceFieldScreen = () => {
                 </Pressable>
             );
         } else {
-            // Utilise CustomInput pour tous les autres champs (inchangé)
             return (
                 <CustomInput
                     label={label}
@@ -200,7 +185,7 @@ export const EditAnnonceFieldScreen = () => {
                     multiline={multiline}
                     numberOfLines={multiline ? 4 : 1}
                     keyboardType={keyboardType || 'default'}
-                    autoFocus={field !== 'currency'} // Pas d'autofocus pour le select
+                    autoFocus={field !== 'currency'}
                     style={multiline ? styles.textArea : {}}
                     editable={!isLoading}
                 />

@@ -343,7 +343,7 @@ export const VitrineDetailScreen = () => {
                 {/* Contact Info */}
                 {(currentVitrine.address || currentVitrine.contact?.email || currentVitrine.contact?.phone) && (
                     <View style={styles.contactDetailsSection}>
-                        <Text style={styles.sectionTitle}>Infos & Bio</Text>
+                        <Text style={styles.sectionTitle}>Infos </Text>
 
                         {currentVitrine.address && (
                             <View style={styles.infoItem}>

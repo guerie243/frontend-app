@@ -43,23 +43,13 @@ export const CATEGORIES_VITRINE: CategoryAnnonce[] = [
         imageUri: 'https://via.placeholder.com/150/00FFFF/000000?text=Service'
     },
     {
+        name: 'Digital',
+        slug: 'Digital',
+        imageUri: 'https://via.placeholder.com/150/0000FF/FFFFFF?text=Digital'
+    },
+    {
         name: 'Mode',
         slug: 'Mode',
         imageUri: 'https://via.placeholder.com/150/FF0000/FFFFFF?text=Mode'
-    },
-    {
-        name: 'High-Tech',
-        slug: 'High-Tech',
-        imageUri: 'https://via.placeholder.com/150/00FF00/FFFFFF?text=Tech'
-    },
-    {
-        name: 'Immobilier',
-        slug: 'Immobilier',
-        imageUri: 'https://via.placeholder.com/150/FFFF00/000000?text=House'
-    },
-    {
-        name: 'Sports & Loisirs',
-        slug: 'Sports',
-        imageUri: 'https://via.placeholder.com/150/FF00FF/FFFFFF?text=Sport'
     },
 ];
