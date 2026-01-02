@@ -5,13 +5,13 @@ import {
     View,
     Text,
     ViewStyle,
-    Alert,
     StyleProp,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { copyToClipboard } from '../utils/clipboardUtils';
 import { ENV } from '../config/env';
+import { useAlertService } from '../utils/alertService';
 
 // --- Interfaces ---
 interface ShareButtonProps {
@@ -37,6 +37,7 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 }) => {
     const { theme } = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
+    const { showError, showToast } = useAlertService();
 
     // Default color if none provided
     const iconColor = color || theme.colors.textSecondary;
@@ -46,15 +47,15 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
     // --- Fonction Unique : Copier le lien ---
     const handleCopyLink = () => {
         if (!pagePath) {
-            Alert.alert("Erreur", "Le lien n'est pas disponible.");
+            showError('Le lien n\'est pas disponible.');
             return;
         }
 
         // Exécute la copie
         copyToClipboard(fullUrl);
 
-        // Affiche un retour utilisateur clair
-        Alert.alert("Lien copié", "Le lien a été copié dans le presse-papiers.");
+        // Affiche un toast pour un meilleur UX
+        showToast('Lien copié dans le presse-papiers');
     };
 
 

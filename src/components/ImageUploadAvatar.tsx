@@ -5,7 +5,6 @@ import {
     Image,
     StyleSheet,
     ActivityIndicator,
-    Alert,
     Modal,
     Animated,
     Easing,
@@ -17,6 +16,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { compressImage } from '../utils/imageUploader';
+import { useAlertService } from '../utils/alertService';
 
 // Image par défaut 
 const DefaultAvatar = require('../../assets/images/defaultimages/default-avatar.png');
@@ -34,6 +34,7 @@ const ImageUploadAvatar = ({
 }) => {
     const [imageUri, setImageUri] = useState(initialImage);
     const [loading, setLoading] = useState(false);
+    const { showError } = useAlertService();
 
     // LOGIQUE MODALE
     const [modalVisible, setModalVisible] = useState(false);
@@ -80,7 +81,7 @@ const ImageUploadAvatar = ({
             }
 
         } catch (error) {
-            Alert.alert("Erreur", "Impossible de traiter l'image.");
+            showError('Impossible de traiter l\'image.');
             setImageUri(initialImage);
         } finally {
             setLoading(false);

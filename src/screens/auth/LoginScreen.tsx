@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -19,11 +18,13 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
+import { useAlertService } from '../../utils/alertService';
 
 export const LoginScreen = () => {
     const navigation = useNavigation<any>();
     const { login } = useAuth();
     const { theme } = useTheme();
+    const { showError, showSuccess } = useAlertService();
     const styles = useMemo(() => createStyles(theme), [theme]);
 
     // L'identifiant (username, email ou phone) est stocké dans cette variable
@@ -57,7 +58,7 @@ export const LoginScreen = () => {
 
     const handleLogin = async () => {
         if (!identifier || !password) {
-            Alert.alert('', 'Veuillez fournir vos identifiants et mot de passe.');
+            showError('Veuillez fournir vos identifiants et mot de passe.', '');
             return;
         }
 
@@ -71,7 +72,7 @@ export const LoginScreen = () => {
                 console.log('Login response status:', response.status);
                 await login(response.data.token, response.data.user);
                 console.log('Login state updated, showing alert...');
-                Alert.alert('Succès', 'Connexion réussie !');
+                showSuccess('Connexion réussie !');
                 console.log('Resetting navigation to MainTabs...');
                 setIdentifier('');
                 setPassword('');
@@ -80,12 +81,12 @@ export const LoginScreen = () => {
                     routes: [{ name: 'MainTabs' }],
                 });
             } else {
-                Alert.alert('Échec', response.data.message || 'Identifiants invalides');
+                showError(response.data.message || 'Identifiants invalides', 'Échec');
             }
         } catch (error: any) {
             console.error('Login Error:', error);
             const message = error.response?.data?.message || error.message || 'Une erreur inattendue est survenue.';
-            Alert.alert('Erreur de Connexion', message);
+            showError(message, 'Erreur de Connexion');
         } finally {
             setIsLoading(false);
         }

@@ -9,7 +9,6 @@ import {
     FlatList,
     ActivityIndicator,
     Dimensions,
-    Alert,
     Platform
 } from 'react-native';
 import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
@@ -31,6 +30,7 @@ import { AnnonceCard } from '../../components/AnnonceCard';
 import { ENV } from '../../config/env';
 import { ImagePreviewModal } from '../../components/ImagePreviewModal';
 import { DEFAULT_IMAGES } from '../../constants/images';
+import { useAlertService } from '../../utils/alertService';
 
 // Helper pour sécuriser les sources d'images
 const getSafeUri = (source: any): string | undefined => {
@@ -58,6 +58,7 @@ export const VitrineDetailScreen = () => {
 
     const { user, isAuthenticated, isGuest } = useAuth();
     const { annonces, fetchAnnoncesByVitrine, isLoading: annoncesLoading, hasMore } = useAnnonces();
+    const { showSuccess, showError } = useAlertService();
     const [page, setPage] = useState(1);
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
@@ -146,10 +147,10 @@ export const VitrineDetailScreen = () => {
         try {
             await updateVitrine(displayedVitrine.slug, { logo: newImageUrl });
             setDisplayedVitrine((prev: any) => ({ ...prev, logo: newImageUrl }));
-            Alert.alert("Succès", "Le logo a été mis à jour !");
+            showSuccess('Le logo a été mis à jour !');
         } catch (error) {
-            console.error("Erreur mise à jour logo:", error);
-            Alert.alert("Erreur", "Échec de la sauvegarde du logo.");
+            console.error('Erreur mise à jour logo:', error);
+            showError('Échec de la sauvegarde du logo.');
         }
     };
 
@@ -157,10 +158,10 @@ export const VitrineDetailScreen = () => {
         try {
             await updateVitrine(displayedVitrine.slug, { coverImage: newImageUrl });
             setDisplayedVitrine((prev: any) => ({ ...prev, coverImage: newImageUrl }));
-            Alert.alert("Succès", "La bannière a été mise à jour !");
+            showSuccess('La bannière a été mise à jour !');
         } catch (error) {
-            console.error("Erreur mise à jour bannière:", error);
-            Alert.alert("Erreur", "Échec de la sauvegarde de la bannière.");
+            console.error('Erreur mise à jour bannière:', error);
+            showError('Échec de la sauvegarde de la bannière.');
         }
     };
 
@@ -230,7 +231,8 @@ export const VitrineDetailScreen = () => {
         `J'aimerais avoir plus d'informations.\n\n` +
         `Lien de la vitrine : ${fullUrl}`;
 
-    // --- Header (Partie commune + conditionnelle) ---
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+
     const ListHeader = () => (
         <>
             {/* 1. Cover & Avatar */}
@@ -257,7 +259,7 @@ export const VitrineDetailScreen = () => {
                     >
                         <Image
                             source={getSafeUri(currentVitrine.coverImage || currentVitrine.banner) ? { uri: getSafeUri(currentVitrine.coverImage || currentVitrine.banner) } : DEFAULT_IMAGES.cover}
-                            style={[styles.coverImage, { height: 200 }]}
+                            style={styles.coverImage}
                             resizeMode="cover"
                         />
                     </TouchableOpacity>
@@ -265,7 +267,6 @@ export const VitrineDetailScreen = () => {
 
                 <View style={[
                     styles.avatarSection,
-                    { borderColor: theme.colors.surface },
                     !isOwner && { bottom: -60 }
                 ]}>
                     {isOwner ? (
@@ -290,15 +291,7 @@ export const VitrineDetailScreen = () => {
                         >
                             <Image
                                 source={getSafeUri(currentVitrine.logo || currentVitrine.avatar) ? { uri: getSafeUri(currentVitrine.logo || currentVitrine.avatar) } : DEFAULT_IMAGES.avatar}
-                                style={[
-                                    styles.avatar,
-                                    {
-                                        borderColor: theme.colors.surface,
-                                        width: 120,
-                                        height: 120,
-                                        borderRadius: 60
-                                    }
-                                ]}
+                                style={styles.avatarLarge}
                             />
                         </TouchableOpacity>
                     )}
@@ -314,9 +307,9 @@ export const VitrineDetailScreen = () => {
                                 console.log('Navigating to Settings...');
                                 navigation.navigate('Settings');
                             }}
-                            style={[styles.actionButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+                            style={styles.actionButton}
                         >
-                            <Ionicons name="settings-outline" size={24} color={theme.colors.surface} />
+                            <Ionicons name="settings-outline" size={24} color={theme.colors.white} />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -324,8 +317,8 @@ export const VitrineDetailScreen = () => {
 
             {/* 2. Bloc Info */}
             <View style={styles.infoBlock}>
-                <Text style={[styles.title, { color: theme.colors.text }]}>{currentVitrine.name}</Text>
-                <Text style={[styles.category, { color: theme.colors.primary, marginBottom: 8 }]}>
+                <Text style={styles.title}>{currentVitrine.name}</Text>
+                <Text style={styles.category}>
                     {(() => {
                         const rawType = currentVitrine.type;
                         const rawCategory = currentVitrine.category;
@@ -335,27 +328,27 @@ export const VitrineDetailScreen = () => {
                     })()}
                 </Text>
 
-                <Text style={[styles.slug, { color: theme.colors.textTertiary, marginBottom: currentVitrine.description ? 16 : 24 }]}>
+                <Text style={[styles.slug, { marginBottom: currentVitrine.description ? 16 : 24 }]}>
                     {currentVitrine.slug}
                 </Text>
 
                 {currentVitrine.description && (
-                    <Text style={[styles.description, { color: theme.colors.textSecondary }]}>{currentVitrine.description}</Text>
+                    <Text style={styles.description}>{currentVitrine.description}</Text>
                 )}
 
-                <View style={[styles.separator, { backgroundColor: theme.colors.border }]} />
+                <View style={styles.separator} />
 
                 {/* Contact Info */}
                 {(currentVitrine.address || currentVitrine.contact?.email || currentVitrine.contact?.phone) && (
                     <View style={styles.contactDetailsSection}>
-                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Informations de Contact</Text>
+                        <Text style={styles.sectionTitle}>Informations de Contact</Text>
 
                         {currentVitrine.address && (
                             <View style={styles.infoItem}>
                                 <Ionicons name="location-outline" size={20} color={theme.colors.textSecondary} style={styles.infoIcon} />
                                 <View style={styles.infoContent}>
-                                    <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Adresse</Text>
-                                    <Text style={[styles.infoValue, { color: theme.colors.text }]}>{currentVitrine.address}</Text>
+                                    <Text style={styles.infoLabel}>Adresse</Text>
+                                    <Text style={styles.infoValue}>{currentVitrine.address}</Text>
                                 </View>
                             </View>
                         )}
@@ -363,8 +356,8 @@ export const VitrineDetailScreen = () => {
                             <View style={styles.infoItem}>
                                 <Ionicons name="mail-outline" size={20} color={theme.colors.textSecondary} style={styles.infoIcon} />
                                 <View style={styles.infoContent}>
-                                    <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Email</Text>
-                                    <Text style={[styles.infoValue, { color: theme.colors.text }]}>{currentVitrine.contact.email}</Text>
+                                    <Text style={styles.infoLabel}>Email</Text>
+                                    <Text style={styles.infoValue}>{currentVitrine.contact.email}</Text>
                                 </View>
                             </View>
                         )}
@@ -372,8 +365,8 @@ export const VitrineDetailScreen = () => {
                             <View style={styles.infoItem}>
                                 <Ionicons name="call-outline" size={20} color={theme.colors.textSecondary} style={styles.infoIcon} />
                                 <View style={styles.infoContent}>
-                                    <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Téléphone</Text>
-                                    <Text style={[styles.infoValue, { color: theme.colors.text }]}>{currentVitrine.contact.phone}</Text>
+                                    <Text style={styles.infoLabel}>Téléphone</Text>
+                                    <Text style={styles.infoValue}>{currentVitrine.contact.phone}</Text>
                                 </View>
                             </View>
                         )}
@@ -381,7 +374,7 @@ export const VitrineDetailScreen = () => {
                 )}
 
                 {/* Actions Principales (Différenciées Owner/Visitor) */}
-                <View style={[styles.mainActionsContainer]}>
+                <View style={styles.mainActionsContainer}>
                     {isOwner ? (
                         // --- OWNER ACTIONS ---
                         <>
@@ -391,14 +384,14 @@ export const VitrineDetailScreen = () => {
                                 style={styles.ownerActionButton}
                             />
                             {/* ShareButton Owner */}
-                            <View style={[styles.shareRectButton, { borderColor: theme.colors.border, flex: 1 }]}>
+                            <View style={styles.shareRectButton}>
                                 <ShareButton
                                     pagePath={pagePath}
                                     shareData={shareData}
                                     size={20}
                                     color={theme.colors.primary}
                                 >
-                                    <Text style={[styles.shareBtnText, { color: theme.colors.primary }]}>Partager</Text>
+                                    <Text style={styles.shareBtnText}>Partager</Text>
                                 </ShareButton>
                             </View>
                         </>
@@ -417,14 +410,14 @@ export const VitrineDetailScreen = () => {
                                 </View>
                             )}
 
-                            <View style={[styles.shareRectButton, { borderColor: '#007AFF', flex: 1 }]}>
+                            <View style={[styles.shareRectButton, { borderColor: theme.colors.primary }]}>
                                 <ShareButton
                                     pagePath={pagePath}
                                     shareData={shareData}
                                     size={20}
                                     color={theme.colors.primary}
                                 >
-                                    <Text style={[styles.shareBtnText, { color: theme.colors.primary }]}>Partager</Text>
+                                    <Text style={styles.shareBtnText}>Partager</Text>
                                 </ShareButton>
                             </View>
                         </>
@@ -433,8 +426,8 @@ export const VitrineDetailScreen = () => {
             </View>
 
             {/* 3. Produits Header */}
-            <View style={[styles.productsHeader, { borderTopColor: theme.colors.border, borderTopWidth: 1 }]}>
-                <Text style={[styles.productsTitle, { color: theme.colors.text }]}>Annonces ({annonces.length})</Text>
+            <View style={styles.productsHeader}>
+                <Text style={styles.productsTitle}>Annonces ({annonces.length})</Text>
             </View>
         </>
     );
@@ -501,9 +494,9 @@ export const VitrineDetailScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    content: { paddingBottom: 40 },
+    content: { paddingBottom: 40, backgroundColor: theme.colors.background },
     coverSection: {
         marginBottom: 60,
         width: '100%',
@@ -511,7 +504,7 @@ const styles = StyleSheet.create({
     coverImage: {
         width: '100%',
         height: 200,
-        backgroundColor: '#EFEFEF',
+        backgroundColor: theme.colors.surfaceLight,
     },
     floatingHeader: {
         position: 'absolute',
@@ -531,18 +524,28 @@ const styles = StyleSheet.create({
         height: 40,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.6)',
     },
     avatarSection: {
         position: "absolute",
         bottom: -70,
         left: 10,
         zIndex: 15,
+        borderColor: theme.colors.surface,
     },
     avatar: {
         width: 80,
         height: 80,
         borderRadius: 40,
         borderWidth: 3,
+        borderColor: theme.colors.surface,
+    },
+    avatarLarge: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        borderWidth: 3,
+        borderColor: theme.colors.surface,
     },
     infoBlock: {
         paddingHorizontal: 16,
@@ -552,28 +555,33 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: '800',
         marginTop: 2,
-        marginBottom: 2
+        marginBottom: 2,
+        color: theme.colors.text,
     },
     slug: {
         fontSize: 12,
-        marginBottom: 2,
         fontWeight: '500',
+        color: theme.colors.textTertiary,
     },
     category: {
         fontSize: 12,
         fontWeight: '700',
         textTransform: 'uppercase',
         letterSpacing: 0.5,
+        color: theme.colors.primary,
+        marginBottom: 8,
     },
     description: {
         fontSize: 14,
         marginBottom: 16,
         lineHeight: 20,
+        color: theme.colors.textSecondary,
     },
     separator: {
         height: 1,
         width: '100%',
         marginVertical: 16,
+        backgroundColor: theme.colors.border,
     },
     contactDetailsSection: {
         marginBottom: 20
@@ -581,7 +589,8 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 16,
         fontWeight: '700',
-        marginBottom: 12
+        marginBottom: 12,
+        color: theme.colors.text,
     },
     infoItem: {
         flexDirection: 'row',
@@ -598,11 +607,13 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '600',
         marginBottom: 1,
-        textTransform: 'uppercase'
+        textTransform: 'uppercase',
+        color: theme.colors.textSecondary,
     },
     infoValue: {
         fontSize: 14,
-        lineHeight: 18
+        lineHeight: 18,
+        color: theme.colors.text,
     },
     mainActionsContainer: {
         flexDirection: 'row',
@@ -613,24 +624,28 @@ const styles = StyleSheet.create({
     ownerActionButton: {
         flex: 1.5,
         marginRight: 12,
+        marginVertical: 0, // Override CustomButton default
     },
     visitorActionButton: {
         flex: 1,
         marginRight: 16,
     },
     shareRectButton: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderRadius: 8,
+        borderRadius: theme.borderRadius.s,
         height: 50,
         paddingHorizontal: 16,
+        borderColor: theme.colors.border,
     },
     shareBtnText: {
         fontSize: 16,
         fontWeight: '600',
         marginLeft: 8,
+        color: theme.colors.primary,
     },
     productsHeader: {
         flexDirection: 'row',
@@ -638,10 +653,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingVertical: 16,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border,
     },
     productsTitle: {
         fontSize: 20,
         fontWeight: '700',
+        color: theme.colors.text,
     },
     columnWrapper: {
         justifyContent: 'space-between',
@@ -651,9 +669,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         marginTop: 24,
-        width: '100%'
+        width: '100%',
+        color: theme.colors.textSecondary,
     },
     guestPromptContainer: {
         padding: 16
     }
 });
+

@@ -4,7 +4,6 @@ import {
     TouchableOpacity,
     Image,
     StyleSheet,
-    Alert,
     Dimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -12,6 +11,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import * as Linking from 'expo-linking';
 import { compressImage } from '../utils/imageUploader';
+import { useAlertService } from '../utils/alertService';
 
 const { width } = Dimensions.get('window');
 const IMAGE_SIZE = (width - 60) / 3;
@@ -33,12 +33,13 @@ export default function ImagePictureUploader({
     setImages: React.Dispatch<React.SetStateAction<ImageItem[]>>;
 }) {
     const [isPickerActive, setIsPickerActive] = useState(false);
+    const { showWarning, showInfo } = useAlertService();
 
     const pickImages = async () => {
         if (isPickerActive) return;
 
         if (images.length >= MAX_IMAGES) {
-            Alert.alert("Limite atteinte", `Vous ne pouvez pas ajouter plus de ${MAX_IMAGES} images.`);
+            showWarning(`Vous ne pouvez pas ajouter plus de ${MAX_IMAGES} images.`, 'Limite atteinte');
             return;
         }
 
@@ -47,11 +48,7 @@ export default function ImagePictureUploader({
         try {
             const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (permission.status !== 'granted') {
-                Alert.alert(
-                    "Autorisation Nécessaire",
-                    "L'accès à votre galerie est requis.",
-                    [{ text: "OK" }]
-                );
+                showWarning('L\'accès à votre galerie est requis.', 'Autorisation Nécessaire');
                 return;
             }
 
@@ -66,10 +63,7 @@ export default function ImagePictureUploader({
                 let selectedAssets = result.assets;
 
                 if (selectedAssets.length > remainingSlots) {
-                    Alert.alert(
-                        "Limite dépassée",
-                        `Seules les ${remainingSlots} premières images sélectionnées ont été ajoutées.`
-                    );
+                    showInfo(`Seules les ${remainingSlots} premières images sélectionnées ont été ajoutées.`, 'Limite dépassée');
                     selectedAssets = selectedAssets.slice(0, remainingSlots);
                 }
 

@@ -9,7 +9,7 @@
  */
 
 import axios from 'axios';
-import { Alert, DeviceEventEmitter } from 'react-native';
+import { DeviceEventEmitter } from 'react-native';
 import { storage } from '../utils/storage';
 
 import { ENV } from '../config/env';
@@ -95,14 +95,8 @@ api.interceptors.response.use(
                     await storage.deleteItem('userToken');
                     await storage.deleteItem('userData');
 
-                    // Message informatif
-                    Alert.alert(
-                        'Session expirée',
-                        'Votre session a expiré. Veuillez vous reconnecter pour effectuer cette action.',
-                        [{ text: 'OK' }]
-                    );
-
                     // Émettre l'événement global pour que l'AuthContext mette à jour l'état
+                    // L'alerte sera affichée par le composant qui écoute cet événement
                     DeviceEventEmitter.emit('auth:session_expired');
                 } else {
                     /**
@@ -112,12 +106,8 @@ api.interceptors.response.use(
                      */
                     console.log('Action protégée tentée en mode invité');
 
-                    // Message d'erreur contextuel en français
-                    Alert.alert(
-                        'Connexion requise',
-                        'Cette action nécessite une connexion. Veuillez vous connecter pour continuer.',
-                        [{ text: 'OK' }]
-                    );
+                    // Émettre un événement pour que le composant affiche l'alerte
+                    DeviceEventEmitter.emit('auth:login_required');
                 }
             } catch (e) {
                 console.error('Erreur lors de la gestion de l\'erreur 401', e);

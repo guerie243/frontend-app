@@ -94,11 +94,7 @@ const createStyles = (theme: any, variant: 'scroll' | 'list') => StyleSheet.crea
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: theme.colors.border,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        ...theme.shadows.small,
     },
     scrollCover: {
         width: '100%',

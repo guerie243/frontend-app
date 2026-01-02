@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Alert, KeyboardTypeOptions } from 'react-native';
+import { View, Text, StyleSheet, KeyboardTypeOptions } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
 import { CustomInput } from '../../components/CustomInput';
@@ -8,6 +8,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useVitrines } from '../../hooks/useVitrines';
 import { SimpleSelect, SelectOption } from '../../components/AnimatedSelect';
 import { CATEGORIES_VITRINE } from '../../Data/vitrinecategorys';
+import { useAlertService } from '../../utils/alertService';
 
 // 1. DÉFINITION DES TYPES POUR LES PARAMÈTRES DE ROUTE
 type VitrineParams = {
@@ -30,6 +31,7 @@ export const EditVitrineFieldScreen = () => {
 
     const { theme } = useTheme();
     const { updateVitrine } = useVitrines();
+    const { showError } = useAlertService();
 
     // 2. Les paramètres sont typés ici
     const { field, label, currentValue, slug, multiline, keyboardType } = route.params;
@@ -43,14 +45,14 @@ export const EditVitrineFieldScreen = () => {
         const trimmedValue = value.trim();
 
         if (!trimmedValue && field !== 'description') { // Permet description vide si besoin
-            Alert.alert('Erreur', `Le champ ${label} ne peut pas être vide`);
+            showError(`Le champ ${label} ne peut pas être vide`);
             return;
         }
 
         // Validation spéciale pour le slogan
         if (field === 'slug') {
             if (!trimmedValue.startsWith('@') || trimmedValue.length <= 1) {
-                Alert.alert('Erreur', 'Le slogan doit commencer par "@" et contenir au moins un caractère');
+                showError('Le slogan doit commencer par "@" et contenir au moins un caractère');
                 return;
             }
         }
@@ -83,7 +85,7 @@ export const EditVitrineFieldScreen = () => {
 
         } catch (error: any) { // Type 'any' pour l'erreur
             console.error("❌ [EditField] Erreur lors de la sauvegarde:", error);
-            Alert.alert('Erreur', error.message || 'Impossible de mettre à jour le champ');
+            showError(error.message || 'Impossible de mettre à jour le champ');
         } finally {
             setIsLoading(false);
         }

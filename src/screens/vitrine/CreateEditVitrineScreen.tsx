@@ -9,7 +9,7 @@
 
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SimpleSelect, SelectOption } from "../../components/AnimatedSelect"; // adapte le chemin si besoin
 import { CustomButton } from '../../components/CustomButton';
 import { CustomInput } from '../../components/CustomInput';
@@ -18,6 +18,7 @@ import { ScreenWrapper } from '../../components/ScreenWrapper';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import { useVitrines } from '../../hooks/useVitrines';
+import { useAlertService } from '../../utils/alertService';
 
 export const CreateEditVitrineScreen = () => {
     const navigation = useNavigation<any>();
@@ -25,6 +26,7 @@ export const CreateEditVitrineScreen = () => {
     const { theme } = useTheme();
     const { createVitrine, updateVitrine } = useVitrines();
     const { isAuthenticated, isGuest } = useAuth();
+    const { showError, showSuccess, showWarning } = useAlertService();
 
     const isEditing = !!route.params?.slug;
     const existingVitrine = route.params?.vitrine;
@@ -43,16 +45,12 @@ export const CreateEditVitrineScreen = () => {
     const handleSubmit = async () => {
         // Vérification de l'authentification
         if (isGuest) {
-            Alert.alert(
-                'Connexion requise',
-                'Vous devez être connecté pour créer ou modifier une vitrine.',
-                [{ text: 'OK' }]
-            );
+            showWarning('Vous devez être connecté pour créer ou modifier une vitrine.', 'Connexion requise');
             return;
         }
 
         if (!name || !category) {
-            Alert.alert('Erreur', 'Le nom et la catégorie sont requis');
+            showError('Le nom et la catégorie sont requis');
             return;
         }
 
@@ -69,10 +67,10 @@ export const CreateEditVitrineScreen = () => {
 
             if (isEditing) {
                 await updateVitrine(route.params.slug, vitrineData);
-                Alert.alert('Succès', 'Vitrine modifiée avec succès');
+                showSuccess('Vitrine modifiée avec succès');
             } else {
                 await createVitrine(vitrineData);
-                Alert.alert('Succès', 'Vitrine créée avec succès');
+                showSuccess('Vitrine créée avec succès');
             }
 
             navigation.goBack();

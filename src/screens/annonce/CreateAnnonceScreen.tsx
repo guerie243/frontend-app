@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Modal, TextInput, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Modal, TextInput, Pressable } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
@@ -14,6 +14,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAnnonces } from '../../hooks/useAnnonces';
 import { useAuth } from '../../hooks/useAuth';
 import { useVitrines } from '../../hooks/useVitrines';
+import { useAlertService } from '../../utils/alertService';
 
 // ✅ Imports des sélecteurs
 // ✅ Imports des sélecteurs
@@ -36,6 +37,7 @@ export const CreateAnnonceScreen = () => {
     const { createAnnonce } = useAnnonces();
     const { isAuthenticated, isGuest } = useAuth();
     const { vitrines, fetchMyVitrines } = useVitrines();
+    const { showError, showSuccess, showInfo, showConfirm } = useAlertService();
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -55,6 +57,8 @@ export const CreateAnnonceScreen = () => {
     const [images, setImages] = useState<any[]>([]);
 
     const userVitrine = vitrines && vitrines.length > 0 ? vitrines[0] : null;
+
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     const cascadingCategories: CascadingParentOption[] = useMemo(() => {
         const rawCategories = (ANNONCE_CATEGORIES_FORMATTED || []) as RawCategorySection[];
@@ -83,42 +87,42 @@ export const CreateAnnonceScreen = () => {
 
     const handleSubmit = async () => {
         if (isGuest) {
-            return Alert.alert(
-                'Connexion requise',
+            return showConfirm(
                 'Vous devez être connecté pour créer une annonce.',
-                [
-                    { text: 'Annuler', style: 'cancel' },
-                    { text: 'Se connecter', onPress: () => navigation.navigate('Login') }
-                ]
+                () => navigation.navigate('Login'),
+                undefined,
+                'Connexion requise',
+                'Se connecter',
+                'Annuler'
             );
         }
 
         if (!userVitrine) {
             const isVitrinesLoading = vitrines === null || vitrines === undefined;
             if (isVitrinesLoading) {
-                return Alert.alert('Patientez', 'Chargement de votre vitrine en cours...');
+                return showInfo('Chargement de votre vitrine en cours...', 'Patientez');
             }
-            return Alert.alert(
-                'Vitrine requise',
+            return showConfirm(
                 'Vous devez créer une vitrine avant de pouvoir publier une annonce.',
-                [
-                    { text: 'Annuler', style: 'cancel' },
-                    { text: 'Créer ma Vitrine', onPress: () => navigation.navigate('CreateVitrine') }
-                ]
+                () => navigation.navigate('CreateVitrine'),
+                undefined,
+                'Vitrine requise',
+                'Créer ma Vitrine',
+                'Annuler'
             );
         }
 
         // ❌ Validation: 2 à 5 photos obligatoires -> 1 minimum
         if (images.length < 1) {
-            return Alert.alert('Erreur', 'Veuillez ajouter au moins 1 image pour votre annonce.');
+            return showError('Veuillez ajouter au moins 1 image pour votre annonce.');
         }
         if (images.length > 5) {
-            return Alert.alert('Erreur', 'Vous ne pouvez pas ajouter plus de 5 images.');
+            return showError('Vous ne pouvez pas ajouter plus de 5 images.');
         }
 
         // ✅ Validation: Le prix n'est plus obligatoire, mais le titre et la catégorie le sont.
         if (!title || !parentCategorySlug) {
-            return Alert.alert('Erreur', 'Le titre et la catégorie sont requis.');
+            return showError('Le titre et la catégorie sont requis.');
         }
 
         setIsLoading(true);
@@ -137,13 +141,8 @@ export const CreateAnnonceScreen = () => {
 
             await createAnnonce(dataToSend as any);
 
-            // Succès
-            if (Platform.OS === 'web') {
-                // Sur Web, Alert.alert ne supporte pas bien les callbacks.
-                // On utilise window.confirm ou window.alert puis on navigue.
-                window.alert('Annonce créée avec succès !');
-
-                // Exécution immédiate de la logique de succès
+            // Succès - Maintenant compatible web et mobile
+            const resetForm = () => {
                 setTitle('');
                 setDescription('');
                 setPrice('');
@@ -152,36 +151,18 @@ export const CreateAnnonceScreen = () => {
                 setParentCategorySlug(null);
                 setChildCategorySlug(null);
                 setLocations('');
-
                 navigation.navigate('VitrineDetail', {
                     refresh: Date.now(),
                     slug: userVitrine.slug
                 });
-            } else {
-                // Native : on garde l'Alert avec callback
-                Alert.alert('Succès', 'Annonce créée avec succès', [
-                    {
-                        text: 'OK',
-                        onPress: () => {
-                            setTitle('');
-                            setDescription('');
-                            setPrice('');
-                            setCurrency('EUR');
-                            setImages([]);
-                            setParentCategorySlug(null);
-                            setChildCategorySlug(null);
-                            setLocations('');
-                            navigation.navigate('VitrineDetail', {
-                                refresh: Date.now(),
-                                slug: userVitrine.slug
-                            });
-                        }
-                    }
-                ]);
-            }
+            };
+
+            showSuccess('Annonce créée avec succès');
+            // Petit délai pour que l'utilisateur voie l'alerte avant la navigation
+            setTimeout(resetForm, 500);
         } catch (error: any) {
             console.error('Erreur création annonce:', error);
-            Alert.alert('Erreur', error.message || 'Impossible de créer l\'annonce');
+            showError(error.message || 'Impossible de créer l\'annonce');
         } finally {
             setIsLoading(false);
         }
@@ -192,7 +173,7 @@ export const CreateAnnonceScreen = () => {
     return (
         <ScreenWrapper>
             <KeyboardAvoidingView
-                style={{ flex: 1 }}
+                style={styles.keyboardAvoidingView}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
             >
@@ -202,25 +183,25 @@ export const CreateAnnonceScreen = () => {
                     keyboardShouldPersistTaps="handled"
                 >
 
-                    <Text style={[styles.title, { color: theme.colors.text }]}>
+                    <Text style={styles.title}>
                         Ajouter votre annonce
                     </Text>
                     {userVitrine && (
-                        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+                        <Text style={styles.subtitle}>
                             Vitrine: {userVitrine.name}
                         </Text>
                     )}
 
                     {/* 1. UPLOADER D'IMAGE (Déplacé en premier) */}
-                    <View style={[styles.imageUploaderContainer, { zIndex: 100 }]} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
-                        <Text style={[styles.imageUploaderTitle, { color: theme.colors.text }]}>
+                    <View style={styles.imageUploaderContainer} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
+                        <Text style={styles.imageUploaderTitle}>
                             Photos (1 à 5 images)*
                         </Text>
                         <ImageUploader images={images} setImages={setImages} />
                     </View>
 
                     {/* 2. BLOC TITRE/INPUT - Désactivé si un selecteur est ouvert */}
-                    <View style={{ zIndex: 90 }} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
+                    <View style={styles.titleInputContainer} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
                         <CustomInput
                             label="Titre du produit *"
                             placeholder="ex: T-Shirt Premium"
@@ -231,7 +212,7 @@ export const CreateAnnonceScreen = () => {
                     </View>
 
                     {/* 3. CASCADING SELECTS (Catégorie) - Gère son état isSelectOpen */}
-                    <View style={[styles.categoryContainer, { zIndex: 80 }]}>
+                    <View style={styles.categoryContainer}>
                         {/* 
                             IMPORTANT: On ne met PAS pointerEvents="none" ici, 
                             sinon on ne peut plus interagir avec le sélecteur ouvert (Deadlock).
@@ -253,7 +234,7 @@ export const CreateAnnonceScreen = () => {
                     </View>
 
                     {/* 4. PRIX / DEVISE */}
-                    <View style={[styles.priceCurrencyWrapper, { zIndex: 70 }]}>
+                    <View style={styles.priceCurrencyWrapper}>
                         {/* 
                             On ne bloque pas le conteneur parent pour permettre l'interaction avec le SimpleSelect.
                             On bloque l'input de prix individuellement via pointerEvents si besoin, 
@@ -283,7 +264,7 @@ export const CreateAnnonceScreen = () => {
                     </View>
 
                     {/* 5. BLOC DESCRIPTION/BOUTON - Désactivé si un selecteur est ouvert */}
-                    <View style={{ zIndex: 60 }} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
+                    <View style={styles.descriptionButtonContainer} pointerEvents={isSelectOpen ? 'none' : 'auto'}>
 
                         <Pressable onPress={() => {
                             setTempDescription(description);
@@ -326,16 +307,13 @@ export const CreateAnnonceScreen = () => {
             >
                 <GestureHandlerRootView style={{ flex: 1 }}>
                     <KeyboardAvoidingView
-                        style={{ flex: 1, backgroundColor: theme.colors.background }}
+                        style={styles.modalKeyboardAvoiding}
                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     >
-                        <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
-                            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Description du produit</Text>
+                        <View style={styles.modalContainer}>
+                            <Text style={styles.modalTitle}>Description du produit</Text>
                             <TextInput
-                                style={[
-                                    styles.modalTextInput,
-                                    { borderColor: theme.colors.border, color: theme.colors.text, backgroundColor: theme.colors.surface }
-                                ]}
+                                style={styles.modalTextInput}
                                 multiline
                                 value={tempDescription}
                                 onChangeText={setTempDescription}
@@ -367,72 +345,96 @@ export const CreateAnnonceScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
-    content: { padding: 16 },
+const createStyles = (theme: any) => StyleSheet.create({
+    keyboardAvoidingView: { flex: 1 },
+    content: {
+        padding: 16,
+        backgroundColor: theme.colors.background,
+    },
     center: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
     },
-    loadingText: { marginTop: 16, fontSize: 16, textAlign: 'center' },
-    guestContainer: { flex: 1, justifyContent: 'center', padding: 16 },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        textAlign: 'center',
+        color: theme.colors.textSecondary,
+    },
+    guestContainer: { flex: 1, justifyContent: 'center', padding: 16, backgroundColor: theme.colors.background },
 
-    // ✅ Styles pour les titres
-    title: { fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-    subtitle: { fontSize: 14, marginBottom: 24, textAlign: 'center' },
+    title: {
+        fontSize: 24,
+        fontWeight: '700',
+        marginBottom: 8,
+        textAlign: 'center',
+        color: theme.colors.text,
+    },
+    subtitle: {
+        fontSize: 14,
+        marginBottom: 24,
+        textAlign: 'center',
+        color: theme.colors.textSecondary,
+    },
 
-    // ✅ Nouveaux styles pour Image Uploader (pour le titre)
-    imageUploaderContainer: { marginBottom: 20 },
+    imageUploaderContainer: { marginBottom: 20, zIndex: 100 },
     imageUploaderTitle: {
         fontSize: 16,
         fontWeight: '600',
         marginBottom: 8,
+        color: theme.colors.text,
     },
 
-    // ✅ Nouveaux styles pour les catégories
+    titleInputContainer: { zIndex: 90 },
+
     categoryContainer: {
         marginBottom: 20,
+        zIndex: 80,
     },
     categoryInstruction: {
         fontSize: 14,
         marginBottom: 10,
-        textAlign: 'center', // Centré comme demandé
+        textAlign: 'center',
         fontStyle: 'italic',
+        color: theme.colors.textSecondary,
     },
 
-    // ✅ STYLES PRIX/DEVISE
     priceCurrencyWrapper: {
         flexDirection: 'column',
         gap: 8,
         marginBottom: 20,
+        zIndex: 70,
     },
     priceInput: {
         marginBottom: 0,
     },
     currencySelect: {
         marginBottom: 0,
-        // Suppression de la hauteur fixe qui "rongeait" le champ
     },
-    // FIN STYLES PRIX/DEVISE
 
-    textArea: {
-        height: 195,
-        textAlignVertical: 'top',
-        paddingTop: 8,
-    },
+    descriptionButtonContainer: { zIndex: 60 },
+
     button: { marginTop: 24 },
+
+    modalKeyboardAvoiding: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
     modalContainer: {
         flex: 1,
         padding: 20,
         justifyContent: 'space-between',
         paddingTop: Platform.OS === 'ios' ? 50 : 20,
+        backgroundColor: theme.colors.background,
     },
     modalTitle: {
         fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 20,
+        color: theme.colors.text,
     },
     modalTextInput: {
         flex: 1,
@@ -441,6 +443,9 @@ const styles = StyleSheet.create({
         padding: 10,
         fontSize: 16,
         textAlignVertical: 'top',
+        borderColor: theme.colors.border,
+        color: theme.colors.text,
+        backgroundColor: theme.colors.surface,
     },
     modalButtons: {
         flexDirection: 'row',

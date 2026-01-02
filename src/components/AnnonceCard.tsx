@@ -35,6 +35,7 @@ const getFirstImageUri = (images: any): string | null => {
 
 export const AnnonceCard: React.FC<AnnonceCardProps> = ({ annonce, onPress }) => {
     const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
 
     // 1. Utilisez la fonction utilitaire pour obtenir la première URI
     const firstImageUri = getFirstImageUri(annonce.images);
@@ -44,20 +45,20 @@ export const AnnonceCard: React.FC<AnnonceCardProps> = ({ annonce, onPress }) =>
 
     return (
         <TouchableOpacity
-            style={[styles.card, { backgroundColor: theme.colors.surface }]}
+            style={styles.card}
             onPress={onPress}
             activeOpacity={0.8}
         >
             <Image
-                source={imageSource} // Utilisation directe de la source calculée
+                source={imageSource}
                 style={styles.image}
                 resizeMode="cover"
             />
             <View style={styles.content}>
-                <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={2}>
+                <Text style={styles.title} numberOfLines={2}>
                     {annonce.title}
                 </Text>
-                <Text style={[styles.price, { color: theme.colors.primary }]}>
+                <Text style={styles.price}>
                     {annonce.price ? `${annonce.price} ${annonce.currency || 'USD'}` : 'Prix sur demande'}
                 </Text>
             </View>
@@ -65,33 +66,31 @@ export const AnnonceCard: React.FC<AnnonceCardProps> = ({ annonce, onPress }) =>
     );
 };
 
-// ... (Le reste des styles reste inchangé)
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     card: {
-        borderRadius: 12,
-        marginBottom: 16,
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.m,
+        marginBottom: theme.spacing.m,
         overflow: 'hidden',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        ...theme.shadows.small,
     },
     image: {
         width: '100%',
         height: 150,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: theme.colors.surfaceLight,
     },
     content: {
-        padding: 12,
+        padding: theme.spacing.s,
     },
     title: {
-        fontSize: 14,
+        ...theme.typography.bodySmall,
+        color: theme.colors.text,
         fontWeight: '600',
-        marginBottom: 4,
+        marginBottom: theme.spacing.xs,
     },
     price: {
-        fontSize: 16,
+        ...theme.typography.body,
+        color: theme.colors.primary,
         fontWeight: '700',
     },
 });

@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { storage } from '../utils/storage';
-import { lightColors, darkColors, typography, spacing, borderRadius } from '../config/theme';
+import { lightColors, darkColors, typography, spacing, borderRadius, shadows } from '../config/theme';
 
 type ThemeType = 'light' | 'dark';
 
@@ -11,6 +11,7 @@ interface ThemeContextType {
         typography: typeof typography;
         spacing: typeof spacing;
         borderRadius: typeof borderRadius;
+        shadows: typeof shadows;
         dark: boolean;
     };
     themeType: ThemeType;
@@ -62,6 +63,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         typography,
         spacing,
         borderRadius,
+        shadows,
         dark: themeType === 'dark',
     };
     // Construction de l'objet `theme` final, sélectionnant les couleurs appropriées basées sur `themeType`.

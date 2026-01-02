@@ -37,14 +37,7 @@ export const AppTabs = () => {
                                 justifyContent: 'center',
                                 alignItems: 'center',
                                 top: -15, // Lift the button up
-                                shadowColor: "#000",
-                                shadowOffset: {
-                                    width: 0,
-                                    height: 4,
-                                },
-                                shadowOpacity: 0.30,
-                                shadowRadius: 4.65,
-                                elevation: 8,
+                                ...theme.shadows.medium,
                             }}>
                                 <Ionicons name="add" size={32} color={theme.colors.white} />
                             </View>

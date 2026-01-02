@@ -18,6 +18,7 @@ export const palette = {
     gray800: '#2C2C2E',
     gray900: '#1C1C1E',
 };
+
 // THÈMES DE COULEURS
 export const lightColors = {
     primary: palette.primary,
@@ -25,6 +26,7 @@ export const lightColors = {
     background: '#F2F2F7',
     surface: '#FFFFFF',
     surfaceLight: '#E5E5EA',
+    card: '#FFFFFF',
     text: '#000000',
     textSecondary: '#8E8E93',
     textTertiary: '#C7C7CC',
@@ -36,9 +38,9 @@ export const lightColors = {
     white: palette.white,
     black: palette.black,
     glass: 'rgba(255, 255, 255, 0.8)',
-    // NOUVEAU : Couleur pour les erreurs
     error: palette.danger,
 };
+
 // THÈME SOMBRE
 export const darkColors = {
     primary: palette.primary,
@@ -46,6 +48,7 @@ export const darkColors = {
     background: '#000000',
     surface: '#1C1C1E',
     surfaceLight: '#2C2C2E',
+    card: '#1C1C1E',
     text: '#FFFFFF',
     textSecondary: '#8E8E93',
     textTertiary: '#48484A',
@@ -57,7 +60,6 @@ export const darkColors = {
     white: palette.white,
     black: palette.black,
     glass: 'rgba(28, 28, 30, 0.7)',
-    // NOUVEAU : Couleur pour les erreurs
     error: palette.danger,
 };
 
@@ -106,11 +108,35 @@ export const borderRadius = {
     round: 9999,
 };
 
+export const shadows = {
+    small: {
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    medium: {
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.30,
+        shadowRadius: 4.65,
+        elevation: 8,
+    },
+};
+
 // Default export for backward compatibility during migration, defaulting to dark
 export const theme = {
     colors: darkColors,
     typography,
     spacing,
     borderRadius,
+    shadows,
     dark: true,
 };

@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Alert,
     ScrollView,
     KeyboardAvoidingView,
     Platform,
@@ -19,11 +18,13 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
+import { useAlertService } from '../../utils/alertService';
 
 export const RegisterScreen = () => {
     const navigation = useNavigation<any>();
     const { login } = useAuth();
     const { theme } = useTheme();
+    const { showError, showSuccess, showWarning } = useAlertService();
     const styles = useMemo(() => createStyles(theme), [theme]);
 
     // États du formulaire
@@ -44,19 +45,19 @@ export const RegisterScreen = () => {
 
     const handleRegister = async () => {
         if (!profileName || !password || !confirmPassword) {
-            Alert.alert('Attention', 'Veuillez remplir tous les champs obligatoires.');
+            showWarning('Veuillez remplir tous les champs obligatoires.');
             return;
         }
         if (useEmailForLogin && !email) {
-            Alert.alert('Attention', 'Veuillez saisir votre adresse e-mail.');
+            showWarning('Veuillez saisir votre adresse e-mail.');
             return;
         }
         if (!useEmailForLogin && !phoneNumber) {
-            Alert.alert('Attention', 'Veuillez saisir votre numéro de téléphone.');
+            showWarning('Veuillez saisir votre numéro de téléphone.');
             return;
         }
         if (!passwordsMatch) {
-            Alert.alert('Attention', 'Le mot de passe et sa confirmation ne correspondent pas.');
+            showWarning('Le mot de passe et sa confirmation ne correspondent pas.');
             return;
         }
 
@@ -77,7 +78,7 @@ export const RegisterScreen = () => {
                 console.log('Registration success, logging in...');
                 await login(token, user);
                 console.log('Logged in, showing success alert...');
-                Alert.alert('Succès', 'Inscription réussie !');
+                showSuccess('Inscription réussie !');
                 console.log('Resetting navigation to MainTabs...');
                 setProfileName('');
                 setEmail('');
@@ -89,10 +90,10 @@ export const RegisterScreen = () => {
                     routes: [{ name: 'MainTabs' }],
                 });
             } else {
-                Alert.alert('Échec', 'Impossible de créer votre compte.');
+                showError('Impossible de créer votre compte.', 'Échec');
             }
         } catch (error: any) {
-            Alert.alert('Oups !', error.response?.data?.message || 'Une erreur inattendue est survenue.');
+            showError(error.response?.data?.message || 'Une erreur inattendue est survenue.', 'Oups !');
         } finally {
             setIsLoading(false);
         }

@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { View, Image, StyleSheet, Pressable, Modal, ActivityIndicator, Animated, Easing } from "react-native";
 
 import { DEFAULT_IMAGES } from "../constants/images";
+
+// Cache global pour les images déjà chargées
+const loadedImagesCache = new Set<string>();
 
 export default function Avatar({
   size = 80,
@@ -11,8 +14,9 @@ export default function Avatar({
   style,
 }) {
   const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(false); // Changed from true to false
+  const [loading, setLoading] = useState(false);
   const [scale] = useState(new Animated.Value(0));
+  const imageUri = useRef<string | null>(null);
 
   // Determine if we have a valid image source (either a numeric resource ID or an object with a non-empty string uri)
   const isValidSource = source && (
@@ -21,6 +25,14 @@ export default function Avatar({
   );
 
   const imageSource = isValidSource ? source : DEFAULT_IMAGES.avatar;
+
+  // Extraire l'URI de l'image pour le cache
+  const currentImageUri = typeof imageSource === 'object' && imageSource.uri ? imageSource.uri : null;
+
+  // Mettre à jour la référence de l'URI actuelle
+  if (currentImageUri !== imageUri.current) {
+    imageUri.current = currentImageUri;
+  }
 
   const openModal = () => {
     setVisible(true);
@@ -31,6 +43,25 @@ export default function Avatar({
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
     }).start();
+  };
+
+  const handleLoadStart = () => {
+    // N'afficher le chargement que si l'image n'est pas déjà dans le cache
+    if (currentImageUri && !loadedImagesCache.has(currentImageUri)) {
+      setLoading(true);
+    }
+  };
+
+  const handleLoadEnd = () => {
+    // Ajouter l'image au cache et masquer le chargement
+    if (currentImageUri) {
+      loadedImagesCache.add(currentImageUri);
+    }
+    setLoading(false);
+  };
+
+  const handleError = () => {
+    setLoading(false);
   };
 
   return (
@@ -55,9 +86,9 @@ export default function Avatar({
           <Image
             source={imageSource}
             style={{ width: "100%", height: "100%", resizeMode: "cover" }}
-            onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
-            onError={() => setLoading(false)}
+            onLoadStart={handleLoadStart}
+            onLoadEnd={handleLoadEnd}
+            onError={handleError}
           />
           {loading && (
             <ActivityIndicator

@@ -5,7 +5,6 @@ import {
     StyleSheet,
     Image,
     TouchableOpacity,
-    Alert,
     RefreshControl,
     FlatList,
     ActivityIndicator,
@@ -26,6 +25,7 @@ import { useAnnonces } from '../../hooks/useAnnonces';
 import { AnnonceCard } from '../../components/AnnonceCard';
 import { ENV } from '../../config/env';
 import { ImagePreviewModal } from '../../components/ImagePreviewModal';
+import { useAlertService } from '../../utils/alertService';
 
 // Helper pour sécuriser les sources d'images (évite le crash ReadableNativeArray)
 const getSafeUri = (source: any): string | undefined => {
@@ -52,6 +52,7 @@ export const VitrineManagementScreen = () => {
     const { user, isAuthenticated, isGuest } = useAuth();
     const { annonces, fetchAnnoncesByVitrine, isLoading: annoncesLoading, hasMore } = useAnnonces();
     const isFocused = useIsFocused();
+    const { showSuccess, showError, showInfo } = useAlertService();
     const [page, setPage] = useState(1);
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
@@ -172,10 +173,10 @@ export const VitrineManagementScreen = () => {
         try {
             await updateVitrine(currentVitrine.slug, { logo: newImageUrl });
             setDisplayedVitrine((prev: any) => ({ ...prev, logo: newImageUrl }));
-            Alert.alert("Succès", "Le logo a été mis à jour !");
+            showSuccess('Le logo a été mis à jour !');
         } catch (error) {
-            console.error("Erreur mise à jour logo backend:", error);
-            Alert.alert("Erreur", "Échec de la sauvegarde du logo.");
+            console.error('Erreur mise à jour logo backend:', error);
+            showError('Échec de la sauvegarde du logo.');
         }
     };
 
@@ -183,10 +184,10 @@ export const VitrineManagementScreen = () => {
         try {
             await updateVitrine(currentVitrine.slug, { coverImage: newImageUrl });
             setDisplayedVitrine((prev: any) => ({ ...prev, coverImage: newImageUrl }));
-            Alert.alert("Succès", "La bannière a été mise à jour !");
+            showSuccess('La bannière a été mise à jour !');
         } catch (error) {
-            console.error("Erreur mise à jour bannière backend:", error);
-            Alert.alert("Erreur", "Échec de la sauvegarde de la bannière.");
+            console.error('Erreur mise à jour bannière backend:', error);
+            showError('Échec de la sauvegarde de la bannière.');
         }
     };
     // --------------------------------------------------
@@ -291,7 +292,7 @@ export const VitrineManagementScreen = () => {
                     {/* Bouton Statistiques */}
                     <TouchableOpacity
                         style={[styles.statsButton, { borderColor: theme.colors.border }]}
-                        onPress={() => Alert.alert("Statistiques", "Les statistiques de votre vitrine seront bientôt disponibles !")}
+                        onPress={() => showInfo('Les statistiques de votre vitrine seront bientôt disponibles !', 'Statistiques')}
                     >
                         <Ionicons name="stats-chart-outline" size={24} color={theme.colors.primary} />
                     </TouchableOpacity>

@@ -8,7 +8,6 @@ import {
     Animated,
     PanResponder,
     TouchableOpacity,
-    Alert,
     Dimensions,
     Platform
 } from 'react-native';
@@ -28,6 +27,7 @@ import { LoadingComponent } from '../../components/LoadingComponent';
 import { StateMessage } from '../../components/StateMessage';
 import { ENV } from '../../config/env';
 import { DEFAULT_IMAGES } from '../../constants/images';
+import { useAlertService } from '../../utils/alertService';
 
 // Constantes pour l'animation du Bottom Sheet
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -43,6 +43,7 @@ export const AnnonceDetailScreen = () => {
     const { currentAnnonce, fetchAnnonceBySlug, isLoading, deleteAnnonce } = useAnnonces();
     const { fetchVitrineBySlug } = useVitrines();
     const { user, isAuthenticated } = useAuth();
+    const { showDestructiveConfirm, showError } = useAlertService();
 
     // --- États ---
     const [vitrineInfo, setVitrineInfo] = useState<any>(null);
@@ -119,35 +120,20 @@ export const AnnonceDetailScreen = () => {
     const handleDelete = async () => {
         if (!currentAnnonce) return;
 
-        if (Platform.OS === 'web') {
-            if (window.confirm('Voulez-vous vraiment supprimer cette annonce ?')) {
+        showDestructiveConfirm(
+            'Voulez-vous vraiment supprimer cette annonce ?',
+            async () => {
                 try {
                     await deleteAnnonce(currentAnnonce.slug);
                     navigation.goBack();
                 } catch (e) {
                     console.error(e);
-                    window.alert("Erreur lors de la suppression");
+                    showError('Erreur lors de la suppression');
                 }
-            }
-        } else {
-            Alert.alert(
-                'Suppression',
-                'Voulez-vous vraiment supprimer cette annonce ?',
-                [
-                    { text: 'Annuler', style: 'cancel' },
-                    {
-                        text: 'Supprimer',
-                        style: 'destructive',
-                        onPress: async () => {
-                            if (currentAnnonce) {
-                                await deleteAnnonce(currentAnnonce.slug);
-                                navigation.goBack();
-                            }
-                        }
-                    }
-                ]
-            );
-        }
+            },
+            undefined,
+            'Suppression'
+        );
     };
 
     const handleGoToVitrine = () => {
@@ -155,6 +141,8 @@ export const AnnonceDetailScreen = () => {
             navigation.navigate('VitrineDetail', { slug: currentAnnonce.vitrineSlug });
         }
     };
+
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
     // --- Rendu Loading / Vide ---
     if (isLoading && !currentAnnonce) {
@@ -209,7 +197,7 @@ export const AnnonceDetailScreen = () => {
 
 
     return (
-        <View style={[styles.container, { backgroundColor: '#000' }]}>
+        <View style={styles.container}>
 
             {/* 1. Zone Image Arrière Plan (Carousel) */}
             <Animated.View style={[styles.carouselContainer, { opacity: carouselOpacity }]}>
@@ -218,7 +206,7 @@ export const AnnonceDetailScreen = () => {
 
                 {/* Bouton retour flottant */}
                 <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color="#FFF" />
+                    <Ionicons name="arrow-back" size={24} color={theme.colors.white} />
                 </TouchableOpacity>
             </Animated.View>
 
@@ -228,13 +216,12 @@ export const AnnonceDetailScreen = () => {
                     styles.infoSheet,
                     {
                         height: infoHeight,
-                        backgroundColor: theme.colors.surface
                     }
                 ]}
             >
                 {/* Zone de Grip (PanResponder) */}
                 <View {...panResponder.panHandlers} style={styles.gripContainer}>
-                    <View style={[styles.gripHandle, { backgroundColor: theme.colors.border }]} />
+                    <View style={styles.gripHandle} />
                 </View>
 
                 <ScrollView
@@ -244,26 +231,26 @@ export const AnnonceDetailScreen = () => {
                     {/* A. En-tête : Titre & Prix */}
                     <View style={styles.headerSection}>
                         <View style={styles.titleRow}>
-                            <Text style={[styles.title, { color: theme.colors.text }]}>
+                            <Text style={styles.title}>
                                 {currentAnnonce.title}
                             </Text>
                             {/* Badge de date relative */}
-                            <View style={[styles.dateBadge, { backgroundColor: theme.colors.card }]}>
+                            <View style={styles.dateBadge}>
                                 <Ionicons name="time-outline" size={12} color={theme.colors.textSecondary} />
-                                <Text style={[styles.dateText, { color: theme.colors.textSecondary }]}>
+                                <Text style={styles.dateText}>
                                     {getRelativeTime(lastModified)}
                                 </Text>
                             </View>
                         </View>
 
-                        <Text style={[styles.price, { color: theme.colors.primary }]}>
+                        <Text style={styles.price}>
                             {price}
                         </Text>
 
                         {((Array.isArray(currentAnnonce.locations) && currentAnnonce.locations.length > 0) || (typeof currentAnnonce.locations === 'string' && currentAnnonce.locations.trim() !== '')) && (
                             <View style={styles.locationRow}>
                                 <Ionicons name="location-sharp" size={16} color={theme.colors.textSecondary} />
-                                <Text style={[styles.locationText, { color: theme.colors.textSecondary }]}>
+                                <Text style={styles.locationText}>
                                     {Array.isArray(currentAnnonce.locations)
                                         ? currentAnnonce.locations.join(', ')
                                         : typeof currentAnnonce.locations === 'string'
@@ -275,12 +262,12 @@ export const AnnonceDetailScreen = () => {
                         )}
                     </View>
 
-                    <View style={[styles.separator, { backgroundColor: theme.colors.border }]} />
+                    <View style={styles.separator} />
 
                     {/* B. Identité Vendeur (Seulement pour VISITEUR) */}
                     {vitrineInfo && (
                         <TouchableOpacity
-                            style={[styles.sellerCard, { backgroundColor: theme.colors.background }]}
+                            style={styles.sellerCard}
                             onPress={handleGoToVitrine}
                         >
                             <Avatar
@@ -291,9 +278,9 @@ export const AnnonceDetailScreen = () => {
                                 }
                             />
                             <View style={styles.sellerInfo}>
-                                <Text style={[styles.sellerLabel, { color: theme.colors.textSecondary }]}>par</Text>
-                                <Text style={[styles.sellerName, { color: theme.colors.text }]}>{vitrineInfo.name}</Text>
-                                <Text style={[styles.viewShopLink, { color: theme.colors.primary }]}>Voir la vitrine</Text>
+                                <Text style={styles.sellerLabel}>par</Text>
+                                <Text style={styles.sellerName}>{vitrineInfo.name}</Text>
+                                <Text style={styles.viewShopLink}>Voir la vitrine</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={24} color={theme.colors.textTertiary} />
                         </TouchableOpacity>
@@ -301,8 +288,8 @@ export const AnnonceDetailScreen = () => {
 
                     {/* C. Description */}
                     <View style={styles.descriptionSection}>
-                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Description</Text>
-                        <Text style={[styles.descriptionText, { color: theme.colors.textSecondary }]}>
+                        <Text style={styles.sectionTitle}>Description</Text>
+                        <Text style={styles.descriptionText}>
                             {currentAnnonce.description || "Aucune description fournie pour cet article."}
                         </Text>
                     </View>
@@ -312,31 +299,31 @@ export const AnnonceDetailScreen = () => {
                 </ScrollView>
 
                 {/* D. Barre d'Actions (Fixe en bas du Sheet) */}
-                <View style={[styles.actionBar, { borderTopColor: theme.colors.border, backgroundColor: theme.colors.surface }]}>
+                <View style={styles.actionBar}>
 
                     {isOwner ? (
                         // --- MODE PROPRIÉTAIRE (Redesign) ---
                         <View style={styles.ownerActions}>
                             {/* 1. Bouton Supprimer (Gauche, Petit, Rouge) */}
                             <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={handleDelete}>
-                                <Ionicons name="trash-outline" size={22} color="#FFF" />
+                                <Ionicons name="trash-outline" size={22} color={theme.colors.white} />
                             </TouchableOpacity>
 
                             {/* 2. Bouton Modifier (Milieu, Grand, Primary) */}
-                            <TouchableOpacity style={[styles.actionBtn, styles.editBtn, { backgroundColor: theme.colors.primary }]} onPress={handleEdit}>
-                                <Ionicons name="create-outline" size={20} color="#FFF" />
+                            <TouchableOpacity style={[styles.actionBtn, styles.editBtn]} onPress={handleEdit}>
+                                <Ionicons name="create-outline" size={20} color={theme.colors.white} />
                                 <Text style={styles.btnTextWhite}>Modifier</Text>
                             </TouchableOpacity>
 
                             {/* 3. Bouton Partager (Droite, Grand, Border) */}
-                            <View style={[styles.actionBtn, styles.shareBtnOwner, { borderColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
+                            <View style={[styles.actionBtn, styles.shareBtnOwner]}>
                                 <ShareButton
                                     pagePath={pagePath}
                                     shareData={shareData}
                                     size={20}
                                     color={theme.colors.text}
                                 >
-                                    <Text style={{ marginLeft: 8, fontWeight: '600', color: theme.colors.text }}>Partager</Text>
+                                    <Text style={styles.shareText}>Partager</Text>
                                 </ShareButton>
                             </View>
                         </View>
@@ -351,14 +338,14 @@ export const AnnonceDetailScreen = () => {
                             />
 
                             {/* 2. Partager (Droite, 50%) */}
-                            <View style={[styles.actionBtn, { flex: 1, marginLeft: 8, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border }]}>
+                            <View style={[styles.actionBtn, styles.shareBtnVisitor]}>
                                 <ShareButton
                                     pagePath={pagePath}
                                     shareData={shareData}
                                     size={22}
                                     color={theme.colors.text}
                                 >
-                                    <Text style={{ marginLeft: 8, fontWeight: '600', color: theme.colors.text }}>Partager</Text>
+                                    <Text style={styles.shareText}>Partager</Text>
                                 </ShareButton>
                             </View>
                         </View>
@@ -370,9 +357,10 @@ export const AnnonceDetailScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: theme.colors.black,
     },
     loadingContainer: {
         flex: 1,
@@ -403,10 +391,8 @@ const styles = StyleSheet.create({
         right: 0,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
+        backgroundColor: theme.colors.surface,
+        ...theme.shadows.medium,
         elevation: 10,
         overflow: 'hidden', // Important pour le border radius
     },
@@ -421,6 +407,7 @@ const styles = StyleSheet.create({
         height: 5,
         borderRadius: 3,
         opacity: 0.4,
+        backgroundColor: theme.colors.border,
     },
     scrollContent: {
         paddingHorizontal: 20,
@@ -442,6 +429,7 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         flex: 1,
         marginRight: 10,
+        color: theme.colors.text,
     },
     dateBadge: {
         flexDirection: 'row',
@@ -449,16 +437,19 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 12,
+        backgroundColor: theme.colors.card,
     },
     dateText: {
         fontSize: 10,
         marginLeft: 4,
         fontWeight: '600',
+        color: theme.colors.textSecondary,
     },
     price: {
         fontSize: 24,
         fontWeight: '800',
         marginBottom: 8,
+        color: theme.colors.primary,
     },
     locationRow: {
         flexDirection: 'row',
@@ -468,12 +459,14 @@ const styles = StyleSheet.create({
     locationText: {
         fontSize: 14,
         marginLeft: 4,
+        color: theme.colors.textSecondary,
     },
     separator: {
         height: 1,
         width: '100%',
         opacity: 0.3,
         marginVertical: 10,
+        backgroundColor: theme.colors.border,
     },
     // --- Seller Card Styles ---
     sellerCard: {
@@ -482,6 +475,7 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 16,
         marginVertical: 10,
+        backgroundColor: theme.colors.background,
     },
     sellerInfo: {
         flex: 1,
@@ -493,15 +487,18 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         letterSpacing: 0.5,
         marginBottom: 2,
+        color: theme.colors.textSecondary,
     },
     sellerName: {
         fontSize: 16,
         fontWeight: '700',
+        color: theme.colors.text,
     },
     viewShopLink: {
         fontSize: 12,
         fontWeight: '600',
         marginTop: 2,
+        color: theme.colors.primary,
     },
     // --- Description Styles ---
     descriptionSection: {
@@ -511,11 +508,13 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         marginBottom: 10,
+        color: theme.colors.text,
     },
     descriptionText: {
         fontSize: 15,
         lineHeight: 24,
         textAlign: 'justify',
+        color: theme.colors.textSecondary,
     },
     // --- Action Bar Styles ---
     actionBar: {
@@ -526,6 +525,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 15,
         borderTopWidth: 1,
+        borderTopColor: theme.colors.border,
+        backgroundColor: theme.colors.surface,
         // Pour les écrans avec Home Indicator (iPhone X+)
         paddingBottom: Platform.OS === 'ios' ? 30 : 20,
     },
@@ -550,20 +551,34 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 10,
         borderWidth: 1,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.background,
     },
     editBtn: {
         flex: 1,
         marginLeft: 10,
+        backgroundColor: theme.colors.primary,
     },
     deleteBtn: {
         width: 50, // Taille minimale fixe pour le bouton supprimer
-        backgroundColor: '#FF4444',
+        backgroundColor: theme.colors.danger,
     },
     btnTextWhite: {
-        color: '#FFF',
+        color: theme.colors.white,
         fontWeight: '600',
         fontSize: 14,
         marginLeft: 6,
     },
-    // Le style `shareWrapper` est obsolète avec le nouveau flex layout
+    shareText: {
+        marginLeft: 8,
+        fontWeight: '600',
+        color: theme.colors.text
+    },
+    shareBtnVisitor: {
+        flex: 1,
+        marginLeft: 8,
+        backgroundColor: theme.colors.surface,
+        borderWidth: 1,
+        borderColor: theme.colors.border
+    }
 });

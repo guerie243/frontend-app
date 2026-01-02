@@ -1,22 +1,23 @@
 import * as Clipboard from 'expo-clipboard';
-import { Alert, Platform, ToastAndroid } from 'react-native';
 
-export const copyToClipboard = async (text: string, successMessage: string = 'Lien copié !') => {
-// Importation des dépendances : `Clipboard` (pour copier), 
-// `Alert` et `ToastAndroid` (pour la notification de succès), et `Platform` (pour la détection de l'OS).
-// Définition de la fonction asynchrone `copyToClipboard` qui prend un texte et un message de succès (par défaut 'Lien copié !').
-// Note : Le message de succès par défaut a été traduit.
+// Note: Cette fonction doit être appelée depuis un composant qui a accès au ToastProvider
+// Pour l'utiliser, importez useToast depuis '../components/ToastNotification'
+export const copyToClipboard = async (
+    text: string,
+    successMessage: string = 'Lien copié !',
+    showToastFn?: (message: string, type: 'success' | 'error' | 'info' | 'warning') => void
+) => {
+    try {
+        await Clipboard.setStringAsync(text);
 
-    await Clipboard.setStringAsync(text);
-    // Copie le texte fourni dans le presse-papiers du système d'exploitation.
-
-    if (Platform.OS === 'android') {
-        ToastAndroid.show(successMessage, ToastAndroid.SHORT);
-    } else {
-        Alert.alert('Succès', successMessage);
-        // Message traduit : 'Succès'
-    }
+        // Si une fonction showToast est fournie, l'utiliser
+        if (showToastFn) {
+            showToastFn(successMessage, 'success');
+        }
+    } catch (error) {
+        console.error('Failed to copy to clipboard:', error);
+        if (showToastFn) {
+            showToastFn('Échec de la copie', 'error');
+        }
+    }
 };
-// Bloc de gestion de la notification de succès : 
-// Utilise `ToastAndroid` (notification non bloquante) pour Android, 
-// et `Alert.alert` (boîte de dialogue bloquante) pour les autres plateformes (iOS, Web).

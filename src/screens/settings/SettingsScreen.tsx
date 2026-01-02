@@ -51,29 +51,31 @@ export const SettingsScreen = () => {
         </TouchableOpacity>
     );
 
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+
     return (
         <ScreenWrapper>
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={[styles.title, { color: theme.colors.text }]}>Paramètres</Text>
+                <Text style={styles.title}>Paramètres</Text>
 
                 {/* SECTION COMPTE - Visible uniquement pour authentifiés */}
                 {isAuthenticated && (
                     <>
                         {/* Profile Card */}
                         <TouchableOpacity
-                            style={[styles.profileCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+                            style={styles.profileCard}
                             onPress={() => navigation.navigate('ProfileDetail')}
                         >
-                            <View style={[styles.avatarPlaceholder, { backgroundColor: theme.colors.primary }]}>
+                            <View style={styles.avatarPlaceholder}>
                                 <Text style={styles.avatarText}>
                                     {user?.profileName ? user.profileName.charAt(0).toUpperCase() : 'U'}
                                 </Text>
                             </View>
                             <View style={styles.profileInfo}>
-                                <Text style={[styles.profileName, { color: theme.colors.text }]}>
+                                <Text style={styles.profileName}>
                                     {user?.profileName || 'Utilisateur'}
                                 </Text>
-                                <Text style={[styles.profileUsername, { color: theme.colors.textSecondary }]}>
+                                <Text style={styles.profileUsername}>
                                     @{user?.username || 'username'}
                                 </Text>
                             </View>
@@ -81,7 +83,6 @@ export const SettingsScreen = () => {
                         </TouchableOpacity>
 
                         {renderSectionHeader('COMPTE')}
-                        {/* Removed duplicate EditProfile link as it's on the card now */}
                     </>
                 )}
 
@@ -136,9 +137,10 @@ export const SettingsScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     content: {
         padding: 16,
+        backgroundColor: theme.colors.background,
     },
     profileCard: {
         flexDirection: 'row',
@@ -147,6 +149,8 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         marginBottom: 8,
         borderWidth: 1,
+        backgroundColor: theme.colors.surface,
+        borderColor: theme.colors.border,
     },
     avatarPlaceholder: {
         width: 60,
@@ -155,9 +159,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,
+        backgroundColor: theme.colors.primary,
     },
     avatarText: {
-        color: '#FFFFFF',
+        color: theme.colors.white,
         fontSize: 24,
         fontWeight: 'bold',
     },
@@ -168,15 +173,18 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '700',
         marginBottom: 4,
+        color: theme.colors.text,
     },
     profileUsername: {
         fontSize: 14,
         fontWeight: '500',
+        color: theme.colors.textSecondary,
     },
     title: {
         fontSize: 32,
         fontWeight: '700',
         marginBottom: 24,
+        color: theme.colors.text,
     },
     sectionHeader: {
         fontSize: 13,
@@ -211,3 +219,4 @@ const styles = StyleSheet.create({
         width: '100%',
     },
 });
+

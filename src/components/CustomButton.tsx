@@ -2,7 +2,7 @@ import React from 'react';
 // Importe les éléments de base de React Native pour un bouton interactif.
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle, StyleProp } from 'react-native';
 // Importe les constantes de style (couleurs, espacements, etc.) de l'application.
-import { theme } from '../config/theme';
+import { useTheme } from '../context/ThemeContext';
 
 // Définition de l'interface TypeScript pour les propriétés du bouton.
 interface CustomButtonProps {
@@ -33,6 +33,9 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
     style,
     textStyle,
 }) => {
+    const { theme } = useTheme();
+    const styles = React.useMemo(() => createStyles(theme), [theme]);
+
     // Fonction pour déterminer la couleur de fond en fonction de la variation et de l'état.
     const getBackgroundColor = () => {
         // Si désactivé, couleur de surface claire du thème.
@@ -64,7 +67,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
                 styles.button,
                 { backgroundColor: getBackgroundColor() },
                 // Application du style de contour si la variation est 'outline'.
-                variant === 'outline' && styles.outlineButton,
+                variant === 'outline' && { borderColor: theme.colors.primary, borderWidth: 1 },
                 style, // Application des styles personnalisés.
             ]}
             onPress={onPress}
@@ -87,7 +90,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
 };
 
 // Définition des styles CSS pour le composant.
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
     button: {
         height: 50,
         borderRadius: theme.borderRadius.m, // Bordures arrondies (medium).
@@ -95,11 +98,6 @@ const styles = StyleSheet.create({
         alignItems: 'center', // Centrage horizontal.
         paddingHorizontal: theme.spacing.m,
         marginVertical: theme.spacing.s,
-    },
-    // Style additionnel pour la variation 'outline' (bouton contour).
-    outlineButton: {
-        borderWidth: 1,
-        borderColor: theme.colors.primary, // Couleur de la bordure.
     },
     text: {
         ...theme.typography.button, // Utilise la typographie définie dans le thème.

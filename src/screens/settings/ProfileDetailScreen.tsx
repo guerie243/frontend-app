@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
 import { CustomButton } from '../../components/CustomButton';
@@ -9,12 +9,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
 import { TouchableOpacity } from 'react-native';
 import api from '../../services/api';
+import { useAlertService } from '../../utils/alertService';
 
 export const ProfileDetailScreen = () => {
     const navigation = useNavigation<any>();
     const { theme } = useTheme();
     const { user, fetchUser, isLoading } = useUserStore();
     const { isAuthenticated, logout } = useAuth();
+    const { showError, showSuccess, showDestructiveConfirm } = useAlertService();
 
     const [refreshing, setRefreshing] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -40,23 +42,17 @@ export const ProfileDetailScreen = () => {
 
     // ✅ Fonction pour afficher l'avertissement initial
     const handleDeleteAccount = () => {
-        Alert.alert(
-            "Supprimer le compte",
-            "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et entraînera la suppression définitive de toutes vos données associées (y compris votre Vitrine et vos Annonces).",
-            [
-                { text: "Annuler", style: "cancel" },
-                {
-                    text: "Continuer",
-                    style: "destructive",
-                    onPress: () => setShowPasswordModal(true)
-                }
-            ]
+        showDestructiveConfirm(
+            'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et entraînera la suppression définitive de toutes vos données associées (y compris votre Vitrine et vos Annonces).',
+            () => setShowPasswordModal(true),
+            undefined,
+            'Supprimer le compte'
         );
     };
 
     const confirmDelete = async () => {
         if (!password.trim()) {
-            Alert.alert("Erreur", "Veuillez entrer votre mot de passe.");
+            showError('Veuillez entrer votre mot de passe.');
             return;
         }
 
@@ -72,7 +68,7 @@ export const ProfileDetailScreen = () => {
             setPassword(''); // Nettoyer le mot de passe
             await logout();
 
-            Alert.alert("Succès", "Votre compte a été supprimé avec succès.");
+            showSuccess('Votre compte a été supprimé avec succès.');
 
             // Redirection vers l'écran de connexion/accueil
             navigation.reset({
@@ -82,7 +78,7 @@ export const ProfileDetailScreen = () => {
         } catch (error: any) {
             console.error("Erreur suppression compte:", error);
             const errorMessage = error.response?.data?.message || "Impossible de supprimer le compte. Vérifiez votre mot de passe.";
-            Alert.alert("Erreur", errorMessage);
+            showError(errorMessage);
             setPassword(''); // Nettoyer le mot de passe en cas d'erreur
         } finally {
             setDeleting(false);

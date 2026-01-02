@@ -7,7 +7,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
 import { CustomInput } from '../../components/CustomInput';
@@ -19,12 +19,14 @@ import { useTheme } from '../../context/ThemeContext';
 import api from '../../services/api';
 import { userService } from '../../services/userService';
 import ImageUploadAvatar from '../../components/ImageUploadAvatar';
+import { useAlertService } from '../../utils/alertService';
 
 export const EditProfileScreen = () => {
     const navigation = useNavigation();
     const { isAuthenticated, isGuest } = useAuth();
     const { user } = useUserStore();
     const { theme } = useTheme();
+    const { showError, showSuccess, showInfo, showWarning } = useAlertService();
 
     const [profileName, setProfileName] = useState(user?.profileName || '');
     const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
@@ -37,11 +39,7 @@ export const EditProfileScreen = () => {
      */
     const handleUpdate = async () => {
         if (isGuest) {
-            Alert.alert(
-                'Connexion requise',
-                'Vous devez être connecté pour modifier votre profil.',
-                [{ text: 'OK' }]
-            );
+            showWarning('Vous devez être connecté pour modifier votre profil.', 'Connexion requise');
             return;
         }
 
@@ -54,7 +52,7 @@ export const EditProfileScreen = () => {
             if (password) updates.password = password;
 
             if (Object.keys(updates).length === 0) {
-                Alert.alert('Info', 'Aucune modification à enregistrer');
+                showInfo('Aucune modification à enregistrer');
                 setIsLoading(false);
                 return;
             }
@@ -62,13 +60,13 @@ export const EditProfileScreen = () => {
             const response = await userService.updateProfile(updates);
 
             if (response.success) {
-                Alert.alert('Succès', 'Profil modifié avec succès');
+                showSuccess('Profil modifié avec succès');
                 // Optionnellement mettre à jour le store ici ou laisser l'app se rafraîchir
                 navigation.goBack();
             }
         } catch (error: any) {
             console.error(error);
-            Alert.alert('Erreur', error.response?.data?.message || 'Échec de la modification du profil');
+            showError(error.response?.data?.message || 'Échec de la modification du profil');
         } finally {
             setIsLoading(false);
         }

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, Modal, TextInput, Pressable } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Modal, TextInput, Pressable } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
@@ -12,6 +12,7 @@ import { CustomInput } from '../../components/CustomInput';
 import { CustomButton } from '../../components/CustomButton';
 import { useTheme } from '../../context/ThemeContext';
 import { useAnnonces } from '../../hooks/useAnnonces';
+import { useAlertService } from '../../utils/alertService';
 
 // 💡 CHANGEMENT 1 : Importation de CascadingSelects et des nouvelles interfaces
 import { CascadingSelects, CascadingParentOption, SimpleSelect } from '../../components/AnimatedSelect';
@@ -33,6 +34,7 @@ export const EditAnnonceFieldScreen = () => {
     const route = useRoute<any>();
     const { theme } = useTheme();
     const { updateAnnonce } = useAnnonces();
+    const { showError } = useAlertService();
 
     // currentValue est la sous-catégorie (slug) si field === 'category'
     const { field, label, currentValue, annonceSlug, vitrineSlug, multiline, keyboardType, initialImages } = route.params;
@@ -93,12 +95,12 @@ export const EditAnnonceFieldScreen = () => {
         }
 
         if (!finalValue) {
-            Alert.alert('Erreur', field === 'category' ? 'Veuillez sélectionner une sous-catégorie' : 'Le champ ne peut pas être vide');
+            showError(field === 'category' ? 'Veuillez sélectionner une sous-catégorie' : 'Le champ ne peut pas être vide');
             return;
         }
 
         if (field === 'price' && isNaN(parseFloat(finalValue))) {
-            Alert.alert('Erreur', 'Le prix doit être un nombre valide.');
+            showError('Le prix doit être un nombre valide.');
             return;
         }
 
@@ -126,7 +128,7 @@ export const EditAnnonceFieldScreen = () => {
 
         } catch (error: any) {
             console.error("❌ [EditAnnonceField] Erreur lors de la sauvegarde:", error);
-            Alert.alert('Erreur', error.message || 'Impossible de mettre à jour le champ');
+            showError(error.message || 'Impossible de mettre à jour le champ');
         } finally {
             setIsLoading(false);
         }

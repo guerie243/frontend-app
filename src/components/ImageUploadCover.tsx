@@ -5,7 +5,6 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   Dimensions,
   Modal,
   Animated,
@@ -15,6 +14,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { compressImage } from '../utils/imageUploader';
+import { useAlertService } from '../utils/alertService';
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const DefaultCover = require('../../assets/images/defaultimages/default-cover.png');
@@ -32,6 +32,7 @@ const ImageUploadCover = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [imageUri, setImageUri] = useState(initialImage);
+  const { showError } = useAlertService();
 
   // LOGIQUE MODALE
   const [modalVisible, setModalVisible] = useState(false);
@@ -76,7 +77,7 @@ const ImageUploadCover = ({
       }
 
     } catch (error) {
-      Alert.alert("Erreur", "Impossible de traiter l'image de couverture.");
+      showError('Impossible de traiter l\'image de couverture.');
     } finally {
       setLoading(false);
     }

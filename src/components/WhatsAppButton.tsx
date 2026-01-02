@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { TouchableOpacity, Text, StyleSheet, Linking, ViewStyle, Alert } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Linking, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useAlertService } from '../utils/alertService';
 
 interface WhatsAppButtonProps {
     phoneNumber?: string;
@@ -19,6 +20,7 @@ export const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
 }) => {
     const { theme } = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
+    const { showError } = useAlertService();
 
     // ✅ LOGIQUE DE CENTRALISATION DU MESSAGE
     let finalMessage = message;
@@ -33,7 +35,7 @@ export const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
 
     const handlePress = async () => {
         if (!phoneNumber) {
-            Alert.alert('Erreur', 'No phone number available');
+            showError('Numéro de téléphone non disponible');
             return;
         }
 
@@ -47,11 +49,11 @@ export const WhatsAppButton: React.FC<WhatsAppButtonProps> = ({
             if (supported) {
                 await Linking.openURL(url);
             } else {
-                Alert.alert('Error', 'WhatsApp is not installed on this device');
+                showError('WhatsApp n\'est pas installé sur cet appareil');
             }
         } catch (err) {
             console.error('An error occurred', err);
-            Alert.alert('Error', 'Could not open WhatsApp');
+            showError('Impossible d\'ouvrir WhatsApp');
         }
     };
 

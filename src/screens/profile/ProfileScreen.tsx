@@ -4,14 +4,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
 import { CustomButton } from '../../components/CustomButton';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../hooks/useAuth';
-// Importation du BottomSheet
 import { BottomSheet } from '../../components/BottomSheet';
+import { useAlertService } from '../../utils/alertService';
 
 // --- Composant d'icône de substitution pour l'exemple ---
 // ** Remplacez ceci par un vrai composant d'icône de votre projet **
@@ -66,44 +65,28 @@ export const ProfileScreen = () => {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
+  const { showDestructiveConfirm } = useAlertService();
 
   const handleDeleteAccount = () => {
     setIsBottomSheetVisible(false);
 
-    // Premier avertissement
-    Alert.alert(
-      'Confirmation de Suppression',
+    // Premier avertissement avec confirmation destructive
+    showDestructiveConfirm(
       'Êtes-vous SÛR de vouloir supprimer votre compte ? Cette action est irréversible.',
-      [
-        {
-          text: 'Annuler',
-          style: 'cancel',
-        },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: () => {
-            // Deuxième et dernier avertissement
-            Alert.alert(
-              'DERNIER AVERTISSEMENT',
-              'Toutes vos données seront perdues. Confirmez la suppression.',
-              [
-                {
-                  text: 'Annuler',
-                  style: 'cancel',
-                },
-                {
-                  text: 'SUPPRIMER DÉFINITIVEMENT',
-                  style: 'destructive',
-                  onPress: () => {
-                    console.log('Suppression du compte lancée...');
-                  },
-                },
-              ]
-            );
+      () => {
+        // Deuxième et dernier avertissement
+        showDestructiveConfirm(
+          'Toutes vos données seront perdues. Confirmez la suppression.',
+          () => {
+            console.log('Suppression du compte lancée...');
           },
-        },
-      ]
+          undefined,
+          'DERNIER AVERTISSEMENT',
+          'SUPPRIMER DÉFINITIVEMENT'
+        );
+      },
+      undefined,
+      'Confirmation de Suppression'
     );
   };
 

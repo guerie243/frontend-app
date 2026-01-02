@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
 import { CustomInput } from '../../components/CustomInput';
@@ -7,12 +7,14 @@ import { CustomButton } from '../../components/CustomButton';
 import { useTheme } from '../../context/ThemeContext';
 import { useUserStore } from '../../store/useUserStore';
 import api from '../../services/api';
+import { useAlertService } from '../../utils/alertService';
 
 export const EditCompteFieldScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
     const { theme } = useTheme();
     const { fetchUser } = useUserStore(); // Pour mettre à jour le store après modif
+    const { showError, showInfo } = useAlertService();
 
     // field: 'profileName', 'phoneNumber', 'password'
     const { field, label, currentValue, keyboardType, secureTextEntry, editable } = route.params;
@@ -21,14 +23,14 @@ export const EditCompteFieldScreen = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     if (editable === false) {
-        Alert.alert('Info', 'Ce champ n\'est pas modifiable.');
+        showInfo('Ce champ n\'est pas modifiable.');
         navigation.goBack();
         return null;
     }
 
     const handleSave = async () => {
         if (!value.toString().trim() && field !== 'password') { // Password peut être vide si on annule ? Non, on est sur un écran d'édition
-            Alert.alert('Erreur', 'Le champ ne peut pas être vide');
+            showError('Le champ ne peut pas être vide');
             return;
         }
 
@@ -49,7 +51,7 @@ export const EditCompteFieldScreen = () => {
 
         } catch (error: any) {
             console.error("❌ [EditCompteField] Erreur:", error);
-            Alert.alert('Erreur', error.response?.data?.message || 'Impossible de mettre à jour le profil');
+            showError(error.response?.data?.message || 'Impossible de mettre à jour le profil');
         } finally {
             setIsLoading(false);
         }

@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
 import { annonceService } from '../services/annonceService';
 import { Annonce } from '../types';
 
@@ -54,7 +53,7 @@ export const useAnnonces = () => {
             return newAnnonce;
         } catch (err: any) {
             setError(err.message || 'Failed to create annonce');
-            Alert.alert('Error', 'Failed to create annonce');
+            console.error('Failed to create annonce:', err);
             throw err;
         } finally {
             setIsLoading(false);
@@ -70,7 +69,7 @@ export const useAnnonces = () => {
             return updatedAnnonce;
         } catch (err: any) {
             setError(err.message || 'Failed to update annonce');
-            Alert.alert('Error', 'Failed to update annonce');
+            console.error('Failed to update annonce:', err);
             throw err;
         } finally {
             setIsLoading(false);
@@ -84,7 +83,7 @@ export const useAnnonces = () => {
             setAnnonces((prev) => prev.filter((a) => a.slug !== slug));
         } catch (err: any) {
             setError(err.message || 'Failed to delete annonce');
-            Alert.alert('Error', 'Failed to delete annonce');
+            console.error('Failed to delete annonce:', err);
             throw err;
         } finally {
             setIsLoading(false);

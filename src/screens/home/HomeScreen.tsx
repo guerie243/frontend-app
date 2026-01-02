@@ -450,7 +450,7 @@ export const HomeScreen = () => {
                     onPress={scrollToTop}
                     accessibilityLabel="Retour en haut"
                 >
-                    <Ionicons name="arrow-up" size={20} color="#FFF" />
+                    <Ionicons name="arrow-up" size={20} color={theme.colors.white} />
                 </TouchableOpacity>
             )}
         </ScreenWrapper >
@@ -545,11 +545,7 @@ const createStyles = (theme: any) => StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        ...theme.shadows.small,
         zIndex: 1000,
     }
 });

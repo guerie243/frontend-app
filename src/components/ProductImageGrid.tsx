@@ -30,6 +30,7 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
 
     const displayImages = validImages.slice(0, 3);
     const overflowCount = validImages.length > 3 ? validImages.length - 3 : 0;
+    const hasMore = overflowCount > 0;
 
     // Loading Pulse Animation
     useEffect(() => {
