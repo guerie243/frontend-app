@@ -53,7 +53,7 @@ export const AppLoadingScreen = () => {
             <Animated.View style={[styles.logoContainer, animatedStyle]}>
                 <Image
                     source={require('../../assets/images/logo_andy.png')}
-                    style={[styles.logo, { borderRadius: theme.borderRadius.xl }]}
+                    style={[styles.logo, { borderRadius: 45 }]}
                     contentFit="contain"
                     transition={500}
                 />
@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 20,
         elevation: 10,
+        borderRadius: 45,
     },
     logo: {
         width: '100%',
