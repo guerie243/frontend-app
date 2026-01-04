@@ -25,7 +25,7 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
     const [likesCount, setLikesCount] = useState(initialLikesCount);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Animation values
+    // Animation pour le cœur
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
     // Charger l'état initial depuis le storage local
@@ -37,23 +37,32 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
         loadLikeState();
     }, [annonceId]);
 
-    // Animation du cœur
-    const animateHeart = () => {
-        Animated.sequence([
-            Animated.spring(scaleAnim, {
-                toValue: 1.3,
-                friction: 3,
-                tension: 100,
-                useNativeDriver: true,
-            }),
-            Animated.spring(scaleAnim, {
+    // Animation quand on like
+    useEffect(() => {
+        if (isLiked) {
+            // Animation de "pop" quand on like
+            Animated.sequence([
+                Animated.timing(scaleAnim, {
+                    toValue: 1.3,
+                    duration: 150,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(scaleAnim, {
+                    toValue: 1,
+                    friction: 3,
+                    tension: 40,
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        } else {
+            // Retour à la normale quand on unlike
+            Animated.timing(scaleAnim, {
                 toValue: 1,
-                friction: 3,
-                tension: 100,
+                duration: 100,
                 useNativeDriver: true,
-            }),
-        ]).start();
-    };
+            }).start();
+        }
+    }, [isLiked]);
 
     const handleToggleLike = async () => {
         if (isLoading) return;
@@ -72,8 +81,6 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
             } else {
                 setIsLiked(true);
                 setLikesCount(likesCount + 1);
-                // Animer seulement quand on like (pas quand on unlike)
-                animateHeart();
             }
 
             // Appel API
@@ -158,10 +165,11 @@ const styles = StyleSheet.create({
     content: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 4,
     },
     count: {
         fontWeight: '600',
         marginLeft: 4,
     },
 });
+

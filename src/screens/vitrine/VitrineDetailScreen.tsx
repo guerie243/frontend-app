@@ -113,7 +113,8 @@ export const VitrineDetailScreen = () => {
                 setDisplayedVitrine(vitrine);
                 if (vitrine) {
                     setPage(1);
-                    fetchAnnoncesByVitrine(vitrine.slug, 1, 10);
+                    // Use ID if available for better reliability, fallback to slug
+                    fetchAnnoncesByVitrine(vitrine.vitrineId || vitrine.slug, 1, 10);
                 }
             } else if (isAuthenticated) {
                 // Mode "Tab" : pas de slug, on charge la vitrine de l'utilisateur
@@ -123,7 +124,7 @@ export const VitrineDetailScreen = () => {
                         const myVitrine = myVitrines[0];
                         setDisplayedVitrine(myVitrine);
                         setPage(1);
-                        fetchAnnoncesByVitrine(myVitrine.slug, 1, 10);
+                        fetchAnnoncesByVitrine(myVitrine.vitrineId || myVitrine.slug, 1, 10);
                     } else {
                         // Pas de vitrine
                         setDisplayedVitrine(null);

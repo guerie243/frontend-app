@@ -198,7 +198,8 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
                 )}
             </TouchableOpacity>
 
-            {/* 5. Actions (WhatsApp/Like/Partager) */}
+
+            {/* 5. Actions (WhatsApp/Partager/Like) */}
             <View style={[styles.actionsContainer, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.border }]}>
                 {vitrinePhone ? (
                     <WhatsAppButton
@@ -214,17 +215,7 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
                     </View>
                 )}
 
-                {/* Bouton Like */}
-                <View style={styles.likeButtonContainer}>
-                    <LikeButton
-                        annonceId={annonce.annonceId}
-                        annonceSlug={annonce.slug}
-                        initialLikesCount={annonce.likes_count || 0}
-                        size={20}
-                    />
-                </View>
-
-                {/* Bouton Partager (inchangé) */}
+                {/* Bouton Partager */}
                 <View style={[styles.shareButtonContainer, { borderColor: theme.colors.border }]}>
                     <ShareButton
                         pagePath={pagePath}
@@ -235,6 +226,16 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
                     >
                         <Text style={[styles.shareButtonText, { color: theme.colors.textSecondary }]}>Partager</Text>
                     </ShareButton>
+                </View>
+
+                {/* Bouton Like */}
+                <View style={styles.likeButtonContainer}>
+                    <LikeButton
+                        annonceId={annonce.annonceId}
+                        annonceSlug={annonce.slug}
+                        initialLikesCount={annonce.likes_count || 0}
+                        size={24}
+                    />
                 </View>
             </View>
         </View>
@@ -351,7 +352,6 @@ const createStyles = (theme: any) => StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderColor: theme.colors.border,
-        marginRight: theme.spacing.s,
     },
     shareButtonContainer: {
         width: 100, // Slightly smaller to look cleaner
@@ -361,6 +361,7 @@ const createStyles = (theme: any) => StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         borderColor: theme.colors.border,
+        marginRight: theme.spacing.s,
     },
     feedCardShareButton: {
         paddingHorizontal: theme.spacing.s,

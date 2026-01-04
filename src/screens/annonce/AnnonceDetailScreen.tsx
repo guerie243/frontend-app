@@ -141,8 +141,9 @@ export const AnnonceDetailScreen = () => {
     };
 
     const handleGoToVitrine = () => {
-        if (currentAnnonce?.vitrineSlug) {
-            navigation.navigate('VitrineDetail', { slug: currentAnnonce.vitrineSlug });
+        const identifier = currentAnnonce?.vitrineSlug || currentAnnonce?.vitrineId;
+        if (identifier) {
+            navigation.navigate('VitrineDetail', { slug: identifier });
         }
     };
 
