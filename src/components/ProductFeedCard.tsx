@@ -137,7 +137,7 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
             <TouchableOpacity
                 style={styles.header}
                 onPress={() => {
-                    const identifier = annonce.vitrineSlug || annonce.vitrineId;
+                    const identifier = annonce.vitrineId || annonce.vitrineSlug;
                     if (identifier) onVitrinePress(identifier);
                 }}
             >
