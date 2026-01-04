@@ -136,7 +136,10 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
             {/* 2. En-tête Vendeur */}
             <TouchableOpacity
                 style={styles.header}
-                onPress={() => annonce.vitrineSlug && onVitrinePress(annonce.vitrineSlug)}
+                onPress={() => {
+                    const identifier = annonce.vitrineSlug || annonce.vitrineId;
+                    if (identifier) onVitrinePress(identifier);
+                }}
             >
                 <Avatar size={40} source={vitrineLogoSource} style={styles.profilePic} />
                 <View style={styles.headerTextContainer}>
