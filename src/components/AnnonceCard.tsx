@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Annonce } from '../types';
 import { DEFAULT_IMAGES } from '../constants/images';
+import { LikeButton } from './LikeButton';
 
 interface AnnonceCardProps {
     annonce: Annonce;
@@ -58,9 +59,17 @@ export const AnnonceCard: React.FC<AnnonceCardProps> = ({ annonce, onPress }) =>
                 <Text style={styles.title} numberOfLines={2}>
                     {annonce.title}
                 </Text>
-                <Text style={styles.price}>
-                    {annonce.price ? `${annonce.price} ${annonce.currency || 'USD'}` : 'Prix sur demande'}
-                </Text>
+                <View style={styles.bottomRow}>
+                    <Text style={styles.price}>
+                        {annonce.price ? `${annonce.price} ${annonce.currency || 'USD'}` : 'Prix sur demande'}
+                    </Text>
+                    <LikeButton
+                        annonceId={annonce.annonceId}
+                        annonceSlug={annonce.slug}
+                        initialLikesCount={annonce.likes_count}
+                        size={20}
+                    />
+                </View>
             </View>
         </TouchableOpacity>
     );
@@ -92,5 +101,11 @@ const createStyles = (theme: any) => StyleSheet.create({
         ...theme.typography.body,
         color: theme.colors.primary,
         fontWeight: '700',
+    },
+    bottomRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 4,
     },
 });

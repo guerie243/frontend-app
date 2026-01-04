@@ -29,6 +29,7 @@ import { ENV } from '../../config/env';
 import { DEFAULT_IMAGES } from '../../constants/images';
 import { useAlertService } from '../../utils/alertService';
 import { ImagePreviewModal } from '../../components/ImagePreviewModal';
+import { LikeButton } from '../../components/LikeButton';
 
 // Constantes pour l'animation du Bottom Sheet
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -348,19 +349,28 @@ export const AnnonceDetailScreen = () => {
                             <WhatsAppButton
                                 phoneNumber={vitrineInfo?.contact?.phone}
                                 message={whatsappMessage}
-                                style={{ flex: 1, marginRight: 8, height: 50 }}
+                                style={{ flex: 1, marginRight: 0, height: 50 }}
                             />
 
-                            {/* 2. Partager (Droite, 50%) */}
-                            <View style={[styles.actionBtn, styles.shareBtnVisitor]}>
+                            {/* 2. Partager */}
+                            <TouchableOpacity style={[styles.actionBtn, styles.shareBtnVisitor]}>
                                 <ShareButton
                                     pagePath={pagePath}
                                     shareData={shareData}
                                     size={22}
                                     color={theme.colors.text}
                                 >
-                                    <Text style={styles.shareText}>Partager</Text>
                                 </ShareButton>
+                            </TouchableOpacity>
+
+                            {/* 3. Like (Droite) */}
+                            <View style={styles.likeBtnVisitor}>
+                                <LikeButton
+                                    annonceId={currentAnnonce.annonceId}
+                                    annonceSlug={currentAnnonce.slug}
+                                    initialLikesCount={currentAnnonce.likes_count}
+                                    size={24}
+                                />
                             </View>
                         </View>
                     )}
@@ -596,10 +606,21 @@ const createStyles = (theme: any) => StyleSheet.create({
         color: theme.colors.text
     },
     shareBtnVisitor: {
-        flex: 1,
+        width: 50, // Carré pour l'icône seulement si on veut, ou garder flex
         marginLeft: 8,
         backgroundColor: theme.colors.surface,
         borderWidth: 1,
         borderColor: theme.colors.border
+    },
+    likeBtnVisitor: {
+        width: 50, // Bouton carré pour le like
+        marginLeft: 8,
+        backgroundColor: theme.colors.surface,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 12,
+        height: 50,
     }
 });

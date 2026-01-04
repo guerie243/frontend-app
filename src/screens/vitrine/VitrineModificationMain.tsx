@@ -139,7 +139,7 @@ export const VitrineModificationMain = () => {
                     <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>Informations Générales</Text>
 
                     {renderFieldItem('Nom', vitrine.name, 'name')}
-                    {renderFieldItem('Slogan', vitrine.slug || '', 'slug')}
+                    {renderFieldItem("Nom d'utilisateur", vitrine.slug || '', 'slug')}
                     {renderFieldItem('Catégorie', vitrine.category || vitrine.type || '', 'category')}
                     {renderFieldItem('Bio', vitrine.description || '', 'description', { multiline: true })}
                 </View>

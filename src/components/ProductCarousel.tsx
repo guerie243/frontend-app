@@ -6,7 +6,8 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
-  ScrollView // Nécessaire pour les types et Animated.ScrollView
+  ScrollView,
+  Text // Nécessaire pour les types et Animated.ScrollView
 } from 'react-native';
 import { DEFAULT_IMAGES } from '../constants/images';
 
@@ -63,23 +64,7 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
 
 
   // Logique de Défilement Automatique
-  useEffect(() => {
-    if (imageCount <= 1) return;
 
-    const interval = setInterval(() => {
-      let nextIndex = (currentIndex + 1) % imageCount;
-      // Utilise les offsets calculés pour le scrollTo
-      const nextOffset = snapToOffsets[nextIndex] || 0;
-
-      scrollRef.current?.scrollTo({
-        x: nextOffset,
-        animated: true
-      });
-      setCurrentIndex(nextIndex);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [currentIndex, imageCount, snapToOffsets]);
 
   // Fonction appelée à la fin d'un défilement manuel
   const handleMomentumScrollEnd = (event: any) => {
@@ -158,27 +143,12 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
         })}
       </Animated.ScrollView>
 
-      {/* Rendu des points de Pagination Manuelle */}
+      {/* Indicateur de compteur d'images (ex: 2/5) */}
       {imageCount > 1 && (
-        <View style={styles.pagination}>
-          {normalizedImages.map((_, i) => {
-            const opacity = currentIndex === i ? 1 : 0.4;
-            const scale = currentIndex === i ? 1.4 : 0.8;
-
-            return (
-              <View
-                key={i}
-                style={[
-                  styles.dot,
-                  {
-                    opacity,
-                    transform: [{ scale }],
-                    backgroundColor: currentIndex === i ? '#FFFFFF' : '#FFFFFF',
-                  }
-                ]}
-              />
-            );
-          })}
+        <View style={styles.counterContainer}>
+          <Text style={styles.counterText}>
+            {currentIndex + 1}/{imageCount}
+          </Text>
         </View>
       )}
     </Animated.View>
@@ -196,18 +166,18 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  pagination: {
+  counterContainer: {
     position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    top: 40,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 4,
+  counterText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

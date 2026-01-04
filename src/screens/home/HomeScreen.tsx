@@ -126,27 +126,30 @@ export const HomeScreen = () => {
     }, [isFocused, loadFeed, loadVitrines]);
 
     const filterBySearch = useCallback(async (query: string) => {
-        const cleanQuery = (query || '').trim().toLowerCase();
+        const rawQuery = (query || '').trim();
+        const cleanQuery = rawQuery.toLowerCase();
         if (!cleanQuery) return;
 
         // --- DÉTECTION D'URL / LIENS ANDY ---
-        const shareUrl = ENV.SHARE_BASE_URL || 'https://andy.com';
+        const shareUrl = (ENV.SHARE_BASE_URL || 'https://andy.com').toLowerCase();
         const isUrl = cleanQuery.includes(shareUrl.replace('https://', '').replace('http://', ''));
         const isAnnoncePath = cleanQuery.includes('/a/') || cleanQuery.startsWith('a/');
         const isVitrinePath = cleanQuery.includes('/v/') || cleanQuery.startsWith('v/');
 
         if (isUrl || isAnnoncePath || isVitrinePath) {
-            // Extraction du slug pour une annonce
+            // Extraction du slug (on utilise rawQuery pour préserver les majuscules des slugs existants)
+
+            // 1. ANNONCE
             if (cleanQuery.includes('/a/') || cleanQuery.startsWith('a/')) {
-                let slug = '';
+                let extractedSlug = '';
                 if (cleanQuery.includes('/a/')) {
-                    slug = cleanQuery.split('/a/')[1];
+                    extractedSlug = rawQuery.split(/\/a\//i)[1];
                 } else if (cleanQuery.startsWith('a/')) {
-                    slug = cleanQuery.replace('a/', '');
+                    extractedSlug = rawQuery.replace(/^a\//i, '');
                 }
 
-                if (slug) {
-                    const finalSlug = slug.split('?')[0].split('#')[0].trim();
+                if (extractedSlug) {
+                    const finalSlug = extractedSlug.split('?')[0].split('#')[0].trim();
                     if (finalSlug) {
                         handleGoToAnnonceDetail(finalSlug);
                         setSearchQuery('');
@@ -155,17 +158,17 @@ export const HomeScreen = () => {
                 }
             }
 
-            // Extraction du slug pour une vitrine
+            // 2. VITRINE
             if (cleanQuery.includes('/v/') || cleanQuery.startsWith('v/')) {
-                let slug = '';
+                let extractedSlug = '';
                 if (cleanQuery.includes('/v/')) {
-                    slug = cleanQuery.split('/v/')[1];
+                    extractedSlug = rawQuery.split(/\/v\//i)[1];
                 } else if (cleanQuery.startsWith('v/')) {
-                    slug = cleanQuery.replace('v/', '');
+                    extractedSlug = rawQuery.replace(/^v\//i, '');
                 }
 
-                if (slug) {
-                    const finalSlug = slug.split('?')[0].split('#')[0].trim();
+                if (extractedSlug) {
+                    const finalSlug = extractedSlug.split('?')[0].split('#')[0].trim();
                     if (finalSlug) {
                         handleGoToVitrine(finalSlug);
                         setSearchQuery('');
@@ -248,9 +251,10 @@ export const HomeScreen = () => {
     // --- CONSTRUCTION DE LA LISTE HYBRIDE ---
 
     const combinedData = useMemo(() => {
+        // CHANGEMENT: On retire SEARCH_BAR de la liste car elle est maintenant au-dessus
         const baseItems = isSearchActive
-            ? [{ type: 'SEARCH_BAR' }]
-            : [{ type: 'SEARCH_BAR' }, { type: 'BANNER' }, { type: 'CATEGORIES' }];
+            ? []
+            : [{ type: 'BANNER' }, { type: 'CATEGORIES' }];
 
         const items = [...baseItems];
 
@@ -301,74 +305,75 @@ export const HomeScreen = () => {
         return items;
     }, [annonces, isSearchActive, vitrines, isLoading, error]);
 
-    const stickyIndices = isSearchActive ? [0] : [0, 2];
+    // SUPPRESSION DE LA LOGIQUE NATIVE STICKY
+    // const stickyIndices = isSearchActive ? [] : [1];
+
+    // NOUVELLE LOGIQUE STICKY CUSTOM
+    const [bannerHeight, setBannerHeight] = useState(0);
+    const [showStickyCategory, setShowStickyCategory] = useState(false);
+
+    const checkSticky = (contentOffsetY: number) => {
+        // Si on n'a pas de bannière (ex: mode recherche), pas de sticky custom nécessaire
+        if (isSearchActive) {
+            if (showStickyCategory) setShowStickyCategory(false);
+            return;
+        }
+
+        // Si on a descendu plus bas que la hauteur de la bannière, on affiche le sticky
+        if (contentOffsetY >= bannerHeight && bannerHeight > 0) {
+            if (!showStickyCategory) setShowStickyCategory(true);
+        } else {
+            if (showStickyCategory) setShowStickyCategory(false);
+        }
+    };
+
+    const handleScrollWithSticky = (event: any) => {
+        handleScroll(event); // Appel de la fonction originale pour le bouton "Retour en haut"
+        const currentOffsetY = event.nativeEvent.contentOffset.y;
+        checkSticky(currentOffsetY);
+    };
+
+
+    // COMPOSANT RENDER DES CATÉGORIES (Réutilisé)
+    const renderCategories = () => (
+        <View style={[styles.categoriesSection, { backgroundColor: theme.colors.background }]}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoriesContent}
+            >
+                {categories.map((category) => (
+                    <View key={category.slug} style={styles.compactPillWrapper}>
+                        <CategoryPill
+                            name={category.name}
+                            slug={category.slug}
+                            imageUri={category.imageUri}
+                            isSelected={selectedCategory === category.slug}
+                            onPress={filterByCategory}
+                        />
+                    </View>
+                ))}
+            </ScrollView>
+        </View>
+    );
 
     const renderItem = ({ item }: { item: any }) => {
         switch (item.type) {
-            case 'SEARCH_BAR':
-                return (
-                    <View style={[styles.headerSection, { backgroundColor: theme.colors.background }]}>
-                        {/* 1. La barre de recherche prend toute la largeur */}
-                        <SearchBar
-                            value={searchQuery}
-                            onChangeText={handleSearchChange}
-                            placeholder="Rechercher..."
-                            containerStyle={styles.compactSearchBar}
-                            onSearch={filterBySearch}
-                        />
-
-                        {/* 2. Le bouton de retour conditionnel est en dessous */}
-                        {isSearchActive && (
-                            <TouchableOpacity
-                                onPress={resetToFullFeed}
-                                style={styles.backButtonContainer} // ✅ Nouveau style
-                                accessibilityLabel="Retour à l'accueil"
-                            >
-                                <View style={styles.backButtonContent}>
-                                    <Ionicons
-                                        name="arrow-back-outline"
-                                        size={16} // Taille légèrement réduite pour un bouton de pied
-                                        color={theme.colors.primary}
-                                    />
-                                    <Text style={[styles.backButtonText, { color: theme.colors.primary }]}>
-                                        Retour
-                                    </Text>
-                                </View>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                );
-
             case 'BANNER':
                 return (
-                    // C'est ici que le style bannerSection est appliqué
-                    <View style={styles.bannerSection}>
+                    <View
+                        style={styles.bannerSection}
+                        onLayout={(event) => {
+                            const { height } = event.nativeEvent.layout;
+                            setBannerHeight(height);
+                        }}
+                    >
                         <ImageCarousel />
                     </View>
                 );
 
             case 'CATEGORIES':
-                return (
-                    <View style={[styles.categoriesSection, { backgroundColor: theme.colors.background }]}>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.categoriesContent}
-                        >
-                            {categories.map((category) => (
-                                <View key={category.slug} style={styles.compactPillWrapper}>
-                                    <CategoryPill
-                                        name={category.name}
-                                        slug={category.slug}
-                                        imageUri={category.imageUri}
-                                        isSelected={selectedCategory === category.slug}
-                                        onPress={filterByCategory}
-                                    />
-                                </View>
-                            ))}
-                        </ScrollView>
-                    </View>
-                );
+                return renderCategories();
 
             case 'VITRINE_BLOCK':
                 return (
@@ -397,7 +402,6 @@ export const HomeScreen = () => {
                 );
 
             default:
-                // C'est une annonce (ProductFeedCard)
                 return (
                     <View style={styles.feedCardContainer}>
                         <ProductFeedCard
@@ -410,39 +414,127 @@ export const HomeScreen = () => {
         }
     };
 
+
     return (
         <ScreenWrapper>
-            <FlatList
-                ref={flatListRef}
-                data={combinedData}
-                renderItem={renderItem}
-                keyExtractor={(item, index) => {
-                    if (item.type === 'VITRINE_BLOCK') return `vitrine-block-${index}`;
-                    return item.slug || item.type || `index-${index}`;
-                }}
+            {/* SEARCH BAR HORS DE LA LISTE */}
+            <View style={[styles.headerSection, { backgroundColor: theme.colors.background }]}>
+                <SearchBar
+                    value={searchQuery}
+                    onChangeText={handleSearchChange}
+                    placeholder="Rechercher..."
+                    containerStyle={styles.compactSearchBar}
+                    onSearch={filterBySearch}
+                />
 
-                stickyHeaderIndices={stickyIndices}
+                {isSearchActive && (
+                    <TouchableOpacity
+                        onPress={resetToFullFeed}
+                        style={styles.backButtonContainer}
+                        accessibilityLabel="Retour à l'accueil"
+                    >
+                        <View style={styles.backButtonContent}>
+                            <Ionicons
+                                name="arrow-back-outline"
+                                size={16}
+                                color={theme.colors.primary}
+                            />
+                            <Text style={[styles.backButtonText, { color: theme.colors.primary }]}>
+                                Retour
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                )}
+            </View>
 
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
+            {/* STICKY HEADER MANUEL (OVERLAY) */}
+            {showStickyCategory && !isSearchActive && (
+                <View style={{
+                    position: 'absolute',
+                    top: isSearchActive ? 0 : 60, // Ajuster selon la hauteur réelle de headerSection si besoin, mais ici headerSection est au dessus.
+                    // ATTENTION: La FlatList est SOUS le headerSection. 
+                    // Si ScreenWrapper est en flex, le headerSection prend de la place.
+                    // Le 'top' absolu part du haut du ScreenWrapper (ou du parent relatif le plus proche).
+                    // ScreenWrapper -> View (container) -> {Children}.
+                    // Notre parent commun est ScreenWrapper -> View.
+                    // Donc headerSection prend de la place. FlatList est en dessous.
+                    // Si on met position: absolute, il se mettra par dessus tout.
+                    // Mais on veut qu'il soit SOUS headerSection. 
+                    // Une meilleure approche est de mettre cet overlay DANS une View qui contient aussi FlatList, 
+                    // ou juste après headerSection.
+                }}>
+                    {/* Non, c'est plus simple: Mettre position 'absolute' avec top = hauteur de headerSection.
+                       Mais on ne connait pas la hauteur exacte.
+                       
+                       ALTERNATIVE PLUS SURE:
+                       Mettre cet élément juste après headerSection dans le flux normal (zIndex élevé) 
+                       mais avec position: 'absolute' et top: [hauteur de headerSection].
+                       
+                       Attendez, si je le mets dans le flux normal juste après headerSection mais en absolute...
+                       Le plus simple est: 
+                       <View style={{ zIndex: 100 }}>{showSticky && renderCategories()}</View> 
+                       Mais ça va prendre de la place? Non si absolute.
+                       
+                       Essai: Le headerSection a une taille fixe (environ).
+                       headerSection padding info: vertical S+M = ~8+16 = 24. + Height 40. + border 1. ~ 65px.
+                       
+                       On va mesurer headerSection aussi pour être parfait. */}
+                </View>
+            )}
 
-                ListEmptyComponent={null}
-                ListFooterComponent={
-                    isLoading && annonces?.length > 0 ? (
-                        <View style={styles.footer}><ActivityIndicator size="small" color={theme.colors.primary} /></View>
-                    ) : null
-                }
+            {/* CORRECTION STRUCTURE:
+                 On veut que l'overlay soit par dessus la FlatList.
+                 On va envelopper FlatList et Overlay dans un View container avec flex:1.
+             */}
 
-                onEndReached={loadMore}
-                onEndReachedThreshold={0.5}
+            <View style={{ flex: 1, position: 'relative' }}>
+                {/* L'overlay doit être ICI pour être par dessus la liste */}
+                {showStickyCategory && !isSearchActive && (
+                    <View style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 100,
+                        elevation: 5 // Important pour Android
+                    }}>
+                        {renderCategories()}
+                    </View>
+                )}
 
-                refreshControl={
-                    < RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
-                }
+                <FlatList
+                    ref={flatListRef}
+                    data={combinedData}
+                    renderItem={renderItem}
+                    keyExtractor={(item, index) => {
+                        if (item.type === 'VITRINE_BLOCK') return `vitrine-block-${index}`;
+                        return item.slug || item.type || `index-${index}`;
+                    }}
 
-                onScroll={handleScroll}
-                scrollEventThrottle={16}
-            />
+                    // PLUS DE STICKY INDICES
+                    // stickyHeaderIndices={stickyIndices}
+
+                    contentContainerStyle={styles.content}
+                    showsVerticalScrollIndicator={false}
+
+                    ListEmptyComponent={null}
+                    ListFooterComponent={
+                        isLoading && annonces?.length > 0 ? (
+                            <View style={styles.footer}><ActivityIndicator size="small" color={theme.colors.primary} /></View>
+                        ) : null
+                    }
+
+                    onEndReached={loadMore}
+                    onEndReachedThreshold={0.5}
+
+                    refreshControl={
+                        < RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+                    }
+
+                    onScroll={handleScrollWithSticky}
+                    scrollEventThrottle={16}
+                />
+            </View>
 
             {showScrollTopButton && (
                 <TouchableOpacity
@@ -513,6 +605,8 @@ const createStyles = (theme: any) => StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
         backgroundColor: theme.colors.background,
+        zIndex: 20, // Assure que les catégories restent au-dessus
+        elevation: 4, // Pour Android
     },
     categoriesContent: {
         paddingHorizontal: theme.spacing.s,

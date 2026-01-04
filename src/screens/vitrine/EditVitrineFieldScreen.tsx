@@ -36,54 +36,102 @@ export const EditVitrineFieldScreen = () => {
     // 2. Les paramètres sont typés ici
     const { field, label, currentValue, slug, multiline, keyboardType } = route.params;
 
+    // Ajustement du libellé pour le slug
+    const displayLabel = field === 'slug' ? "Nom d'utilisateur" : label;
+
     const [value, setValue] = useState(currentValue || '');
     const [isLoading, setIsLoading] = useState(false);
+    const [liveError, setLiveError] = useState<string | null>(null);
+
+    // --- LOGIQUE SPÉCIFIQUE TÉLÉPHONE ---
+    const initialCountryCode = useMemo(() => {
+        if (field === 'phone' && currentValue) {
+            // Tente d'extraire le code pays (1 à 3 chiffres)
+            const match = currentValue.match(/^\+?(\d{1,3})/);
+            return match ? match[1] : '243';
+        }
+        return '243';
+    }, [field, currentValue]);
+
+    const initialLocalNumber = useMemo(() => {
+        if (field === 'phone' && currentValue) {
+            const countryCode = initialCountryCode;
+            // On enlève le + initial s'il existe, puis le code pays au DEBUT seulement
+            const cleanValue = currentValue.replace(/^\+/, '');
+            if (cleanValue.startsWith(countryCode)) {
+                return cleanValue.slice(countryCode.length);
+            }
+            return cleanValue;
+        }
+        return currentValue || '';
+    }, [field, currentValue, initialCountryCode]);
+
+    const [countryCode, setCountryCode] = useState(initialCountryCode);
+    const [localNumber, setLocalNumber] = useState(initialLocalNumber);
+
+    // --- LOGIQUE VALIDATION SLUG (Username) ---
+    const validateSlug = (text: string) => {
+        if (!text) return null;
+        if (!text.startsWith('@')) return "Le nom d'utilisateur doit commencer par '@'";
+        const content = text.slice(1);
+        if (/[A-Z]/.test(content)) return "Les majuscules ne sont pas autorisées.";
+        if (/\s/.test(content)) return "Les espaces ne sont pas autorisés.";
+        if (/[^a-z0-9_]/.test(content)) return "Seuls les lettres minuscules, chiffres et tirets bas (_) sont autorisés.";
+        return null;
+    };
+
+    const handleValueChange = (text: string) => {
+        setValue(text);
+        if (field === 'slug') {
+            const error = validateSlug(text);
+            setLiveError(error);
+        }
+    };
 
     const handleSave = async () => {
-        console.log("1. [EditField] Tentative de PATCH pour le champ:", field, "avec valeur:", value);
+        console.log("1. [EditField] Tentative de PATCH pour le champ:", field);
 
-        const trimmedValue = value.trim();
+        let finalValue = field === 'phone' ? ("+" + countryCode.replace(/^\+/, '') + localNumber.trim()) : value.trim();
 
-        if (!trimmedValue && field !== 'description') { // Permet Bio vide si besoin
-            showError(`Le champ ${label} ne peut pas être vide`);
+        if (!finalValue && field !== 'description') {
+            showError(`Le champ ${displayLabel} ne peut pas être vide`);
             return;
         }
 
-        // Validation spéciale pour le slogan
+        // --- VALIDATION SLUG (Username) ---
         if (field === 'slug') {
-            if (!trimmedValue.startsWith('@') || trimmedValue.length <= 1) {
-                showError('Le slogan doit commencer par "@" et contenir au moins un caractère');
+            const error = validateSlug(finalValue);
+            if (error) {
+                showError(error);
+                return;
+            }
+            if (finalValue.length < 3) {
+                showError("Le nom d'utilisateur est trop court.");
                 return;
             }
         }
 
         setIsLoading(true);
         try {
-            // Construction dynamique du payload
-            const finalValue = trimmedValue;
-
             // Cas spécial pour les champs imbriqués dans contact
             if (field === 'phone') {
-                console.log("2. [EditField] Envoi PATCH pour phone (nested in contact)");
+                console.log("2. [EditField] Envoi PATCH pour phone:", finalValue);
                 await updateVitrine(slug, { contact: { phone: finalValue } });
             } else if (field === 'email') {
-                console.log("2. [EditField] Envoi PATCH pour email (nested in contact)");
+                console.log("2. [EditField] Envoi PATCH pour email:", finalValue);
                 await updateVitrine(slug, { contact: { email: finalValue } });
             } else {
-                console.log("2. [EditField] Envoi PATCH pour", field);
+                console.log("2. [EditField] Envoi PATCH pour", field, ":", finalValue);
                 const updates = { [field]: finalValue };
                 await updateVitrine(slug, updates);
             }
 
-            console.log("3. [EditField] ✅ PATCH réussi - Mise à jour en base de données confirmée");
+            console.log("3. [EditField] ✅ PATCH réussi");
 
             const refreshTimestamp = Date.now();
-            console.log("4. [EditField] Navigation vers VitrineModificationMain avec refreshed:", refreshTimestamp);
-
-            // 3. Navigation avec NAVIGATE pour éviter les boucles dans la stack (trouve l'instance existante)
             navigation.navigate('VitrineModificationMain', { refreshed: refreshTimestamp });
 
-        } catch (error: any) { // Type 'any' pour l'erreur
+        } catch (error: any) {
             console.error("❌ [EditField] Erreur lors de la sauvegarde:", error);
             showError(error.message || 'Impossible de mettre à jour le champ');
         } finally {
@@ -94,7 +142,7 @@ export const EditVitrineFieldScreen = () => {
     // LOGIQUE DE MODIFICATION SPÉCIFIQUE AU SÉLECTEUR DE CATÉGORIE
     const categoriesForSelect: SelectOption[] = useMemo(() => {
         const GeneralOption: SelectOption = {
-            slug: 'generale',
+            slug: 'general',
             name: 'Générale',
             imageUri: null,
         };
@@ -102,30 +150,64 @@ export const EditVitrineFieldScreen = () => {
         const filteredCategories = CATEGORIES_VITRINE.filter(cat => cat.slug !== 'all');
 
         return [GeneralOption, ...filteredCategories] as SelectOption[];
-    }, []); // Utilisation de useMemo pour optimiser
+    }, []);
 
     return (
         <ScreenWrapper>
             <View style={styles.content}>
-                <Text style={[styles.title, { color: theme.colors.text }]}>Modifier {label}</Text>
+                <Text style={[styles.title, { color: theme.colors.text }]}>Modifier {displayLabel}</Text>
 
                 {field === 'category' ? (
                     <SimpleSelect
-                        label={label}
+                        label={displayLabel}
                         options={categoriesForSelect}
                         value={value}
                         onChange={setValue}
                     />
+                ) : field === 'phone' ? (
+                    <View style={styles.phoneContainer}>
+                        <View style={styles.countryCodeColumn}>
+                            <CustomInput
+                                label="Pays"
+                                value={countryCode.replace(/^\+/, '')}
+                                onChangeText={(text) => setCountryCode(text.replace(/[^0-9]/g, '').slice(0, 3))}
+                                keyboardType="phone-pad"
+                                maxLength={3}
+                                containerStyle={{ marginBottom: 0 }}
+                                LeftComponent={
+                                    <Text style={{
+                                        color: theme.colors.textSecondary,
+                                        fontSize: 16,
+                                        marginRight: 4,
+                                        fontWeight: '600'
+                                    }}>+</Text>
+                                }
+                            />
+                        </View>
+                        <View style={styles.localNumberColumn}>
+                            <CustomInput
+                                label="Numéro"
+                                value={localNumber}
+                                onChangeText={setLocalNumber}
+                                placeholder="97709XXXX"
+                                keyboardType="phone-pad"
+                                containerStyle={{ marginBottom: 0 }}
+                                autoFocus
+                            />
+                        </View>
+                    </View>
                 ) : (
                     <CustomInput
-                        label={label}
+                        label={displayLabel}
                         value={value}
-                        onChangeText={setValue}
+                        onChangeText={handleValueChange}
                         multiline={multiline}
                         numberOfLines={multiline ? 10 : 1}
                         keyboardType={keyboardType || 'default'}
                         autoFocus
+                        placeholder={field === 'slug' ? "@nom_utilisateur" : ""}
                         style={multiline ? styles.textArea : {}}
+                        error={liveError || undefined}
                     />
                 )}
 
@@ -156,5 +238,16 @@ const styles = StyleSheet.create({
         minHeight: 350,
         textAlignVertical: 'top',
         paddingTop: 8,
+    },
+    phoneContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    countryCodeColumn: {
+        flex: 1,
+        marginRight: 8,
+    },
+    localNumberColumn: {
+        flex: 3,
     },
 });

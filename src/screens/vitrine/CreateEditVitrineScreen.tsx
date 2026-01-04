@@ -114,13 +114,7 @@ export const CreateEditVitrineScreen = () => {
 
                 <SimpleSelect
                     label="Catégorie *"
-                    options={[
-                        { name: "Mode", slug: "Mode", imageUri: null },
-                        { name: "Électronique", slug: "Électronique", imageUri: null },
-                        { name: "Maison", slug: "Maison", imageUri: null },
-                        { name: "Sports", slug: "Sports", imageUri: null },
-                        { name: "Autre", slug: "Autre", imageUri: null }
-                    ]}
+                    options={CATEGORIES_VITRINE.filter(cat => cat.slug !== 'all')}
                     value={category}
                     onChange={setCategory}
                 />
