@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { TouchableOpacity, Text, View, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { annonceService } from '../services/annonceService';
@@ -17,13 +17,16 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
     annonceId,
     annonceSlug,
     initialLikesCount = 0,
-    size = 20,
+    size = 24,
     style,
 }) => {
     const { theme } = useTheme();
     const [isLiked, setIsLiked] = useState(false);
     const [likesCount, setLikesCount] = useState(initialLikesCount);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Animation values
+    const scaleAnim = useRef(new Animated.Value(1)).current;
 
     // Charger l'état initial depuis le storage local
     useEffect(() => {
@@ -33,6 +36,24 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
         };
         loadLikeState();
     }, [annonceId]);
+
+    // Animation du cœur
+    const animateHeart = () => {
+        Animated.sequence([
+            Animated.spring(scaleAnim, {
+                toValue: 1.3,
+                friction: 3,
+                tension: 100,
+                useNativeDriver: true,
+            }),
+            Animated.spring(scaleAnim, {
+                toValue: 1,
+                friction: 3,
+                tension: 100,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    };
 
     const handleToggleLike = async () => {
         if (isLoading) return;
@@ -51,6 +72,8 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
             } else {
                 setIsLiked(true);
                 setLikesCount(likesCount + 1);
+                // Animer seulement quand on like (pas quand on unlike)
+                animateHeart();
             }
 
             // Appel API
@@ -98,11 +121,13 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
                 {isLoading ? (
                     <ActivityIndicator size="small" color={theme.colors.primary} />
                 ) : (
-                    <Ionicons
-                        name={isLiked ? 'heart' : 'heart-outline'}
-                        size={size}
-                        color={isLiked ? theme.colors.error : theme.colors.textSecondary}
-                    />
+                    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                        <Ionicons
+                            name={isLiked ? 'heart' : 'heart-outline'}
+                            size={size}
+                            color={isLiked ? theme.colors.error : theme.colors.textSecondary}
+                        />
+                    </Animated.View>
                 )}
                 {likesCount > 0 && (
                     <Text
@@ -110,7 +135,7 @@ export const LikeButton: React.FC<LikeButtonProps> = ({
                             styles.count,
                             {
                                 color: isLiked ? theme.colors.error : theme.colors.textSecondary,
-                                fontSize: size * 0.7,
+                                fontSize: size * 0.6,
                             },
                         ]}
                     >
@@ -133,7 +158,7 @@ const styles = StyleSheet.create({
     content: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 6,
     },
     count: {
         fontWeight: '600',
