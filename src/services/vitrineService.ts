@@ -43,11 +43,11 @@ export const vitrineService = {
     },
     // Fonction pour récupérer toutes les vitrines appartenant à l'utilisateur authentifié. Retourne le tableau des vitrines.
 
-    getVitrineBySlug: async (slug: string) => {
-        const response = await api.get<{ success: boolean; vitrine: Vitrine }>(`/vitrines/${slug}`);
+    getVitrineBySlug: async (idOrSlug: string) => {
+        const response = await api.get<{ success: boolean; vitrine: Vitrine }>(`/vitrines/${idOrSlug}`);
         return response.data.vitrine;
     },
-    // Fonction pour récupérer une vitrine spécifique en utilisant son slug. Retourne l'objet vitrine.
+    // Fonction pour récupérer une vitrine spécifique en utilisant son slug ou son ID. Retourne l'objet vitrine.
 
     createVitrine: async (data: Partial<Vitrine>) => {
         const payload = hasFiles(data) ? await toFormData(data) : data;

@@ -19,7 +19,7 @@ import { compressImage } from '../utils/imageUploader';
 import { useAlertService } from '../utils/alertService';
 
 // Image par défaut 
-const DefaultAvatar = require('../../assets/images/defaultimages/default-avatar.png');
+const DefaultAvatar = require('../../assets/images/defaultimages/default_avatar.png');
 
 const ImageUploadAvatar = ({
     initialImage,

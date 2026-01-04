@@ -18,50 +18,38 @@
  * - Toujours <AppStack />
  * - Login/Register sont des écrans normaux dans le stack
  */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { AppStack } from './AppStack';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { AppLoadingScreen } from '../components/AppLoadingScreen';
 
 /**
  * Composant RootNavigator
  * 
- * Responsabilité unique : Afficher l'écran de chargement pendant la vérification initiale,
- * puis afficher l'application complète.
- * 
- * Plus de logique conditionnelle basée sur l'authentification !
+ * Responsabilité : Afficher l'écran de chargement (Splash) au démarrage,
+ * puis basculer vers l'application complète.
  */
 export const RootNavigator = () => {
-    const { isLoading } = useAuth();
+    const { isLoading: isAuthLoading } = useAuth();
     const { theme } = useTheme();
+    const [isSplashTiming, setIsSplashTiming] = useState(true);
 
-    // Affichage de l'écran de chargement uniquement pendant la vérification initiale du token
-    // (au démarrage de l'application)
-    if (isLoading) {
-        return (
-            <View style={{
-                flex: 1,
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: theme.colors.background
-            }}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-            </View>
-        );
+    useEffect(() => {
+        // Force l'affichage du splash screen pendant au moins 2 secondes
+        const timer = setTimeout(() => {
+            setIsSplashTiming(false);
+        }, 2000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Affichage de l'écran de chargement premium (Andy Logo)
+    // pendant la vérification initiale ET pendant le délai de 2 secondes
+    if (isAuthLoading || isSplashTiming) {
+        return <AppLoadingScreen />;
     }
 
-    /**
-     * CHANGEMENT MAJEUR : Toujours afficher l'application complète
-     * 
-     * Que l'utilisateur soit invité ou authentifié, il voit la même interface.
-     * La différence se situe au niveau des actions disponibles dans chaque écran.
-     * 
-     * Avantages :
-     * - Navigation fluide pour les invités
-     * - Découverte du contenu sans barrière
-     * - Incitation à se connecter au moment opportun (lors d'une action)
-     */
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
             <AppStack />

@@ -61,6 +61,9 @@ export const VitrinePublicScreen = () => {
             if (vitrineSlug) {
                 await fetchVitrineBySlug(vitrineSlug);
                 setPage(1);
+                // On pourrait utiliser vitrineId ici si on l'avait déjà, mais comme on vient de fetch, 
+                // le fetchAnnoncesByVitrine sera de toute façon appelé dans l'useEffect ci-dessous
+                // ou on peut passer le slug, le service gère les deux.
                 await fetchAnnoncesByVitrine(vitrineSlug, 1, 10);
             }
         } catch (error) {
@@ -79,7 +82,7 @@ export const VitrinePublicScreen = () => {
                 if (vitrine) {
                     setDisplayedVitrine(vitrine);
                     setPage(1);
-                    fetchAnnoncesByVitrine(vitrine.slug, 1, 10);
+                    fetchAnnoncesByVitrine(vitrine.vitrineId, 1, 10);
                 }
             }
         };
@@ -87,10 +90,10 @@ export const VitrinePublicScreen = () => {
     }, [slug, fetchVitrineBySlug, fetchAnnoncesByVitrine]);
 
     const loadMoreAnnonces = () => {
-        if (!annoncesLoading && hasMore && displayedVitrine?.slug) {
+        if (!annoncesLoading && hasMore && displayedVitrine) {
             const nextPage = page + 1;
             setPage(nextPage);
-            fetchAnnoncesByVitrine(displayedVitrine.slug, nextPage, 10);
+            fetchAnnoncesByVitrine(displayedVitrine.vitrineId || displayedVitrine.slug, nextPage, 10);
         }
     };
 

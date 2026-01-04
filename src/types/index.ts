@@ -44,6 +44,7 @@ export interface Annonce {
     link?: string; // Ajout du champ link
     images: string[];
     locations?: string[]; // Ajout du champ locations
+    likes_count?: number; // Compteur de likes (optionnel pour rétrocompatibilité)
     createdAt: string;
     updatedAt?: string;
 }

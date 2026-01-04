@@ -17,7 +17,7 @@ import { compressImage } from '../utils/imageUploader';
 import { useAlertService } from '../utils/alertService';
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-const DefaultCover = require('../../assets/images/defaultimages/default-cover.png');
+const DefaultCover = require('../../assets/images/defaultimages/default_cover.png');
 
 const ImageUploadCover = ({
   initialImage,

@@ -30,8 +30,8 @@ export const annonceService = {
     // Importation de l'instance d'Axios configurée (`api`) et du type de donnée `Annonce`.
     // Définition de l'objet `annonceService` qui regroupe les fonctions d'interaction avec l'API des annonces.
 
-    getAnnoncesByVitrine: async (vitrineSlug: string, page = 1, limit = 10) => {
-        const response = await api.get<{ success: boolean; annonces: Annonce[] }>(`/annonces/vitrine/${vitrineSlug}?page=${page}&limit=${limit}`);
+    getAnnoncesByVitrine: async (vitrineIdOrSlug: string, page = 1, limit = 10) => {
+        const response = await api.get<{ success: boolean; annonces: Annonce[] }>(`/annonces/vitrine/${vitrineIdOrSlug}?page=${page}&limit=${limit}`);
         return response.data.annonces;
     },
     // Fonction asynchrone pour récupérer la liste des annonces associées à un slug de vitrine donné. Retourne le tableau des annonces.
@@ -75,5 +75,17 @@ export const annonceService = {
         return response.data;
     },
     // Fonction pour récupérer un flux général d'annonces paginées. Utilise des paramètres par défaut pour la page et la limite.
+
+    likeAnnonce: async (slug: string) => {
+        const response = await api.post<{ success: boolean; annonce: Annonce }>(`/annonces/${slug}/like`);
+        return response.data.annonce;
+    },
+    // Fonction pour ajouter un like à une annonce. Retourne l'annonce mise à jour avec le nouveau compteur.
+
+    unlikeAnnonce: async (slug: string) => {
+        const response = await api.delete<{ success: boolean; annonce: Annonce }>(`/annonces/${slug}/like`);
+        return response.data.annonce;
+    },
+    // Fonction pour retirer un like d'une annonce. Retourne l'annonce mise à jour avec le nouveau compteur.
 };
 // L'objet `annonceService` fournit l'ensemble des méthodes CRUD et de lecture de données pour l'entité Annonce.

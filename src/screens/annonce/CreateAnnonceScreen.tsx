@@ -129,6 +129,7 @@ export const CreateAnnonceScreen = () => {
         try {
             const categoryToSend = childCategorySlug || parentCategorySlug;
             const dataToSend = {
+                vitrineId: userVitrine.vitrineId,
                 vitrineSlug: userVitrine.slug,
                 title,
                 description,

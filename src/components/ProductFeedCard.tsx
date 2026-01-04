@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getRelativeTime } from '../utils/dateUtils';
 import { ENV } from '../config/env';
 import { DEFAULT_IMAGES } from '../constants/images';
+import { LikeButton } from './LikeButton';
 
 // Dimensions
 const { width } = Dimensions.get('window');
@@ -47,10 +48,12 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
     useEffect(() => {
         let isMounted = true;
         const getVitrineData = async () => {
-            if (annonce.vitrineSlug) {
+            const vitrineIdentifier = annonce.vitrineId || annonce.vitrineSlug;
+            if (vitrineIdentifier) {
                 if (isMounted) setIsLoadingVitrine(true);
                 try {
-                    const vitrineData = await fetchVitrineBySlug(annonce.vitrineSlug);
+                    // fetchVitrineBySlug might need to be renamed or overloaded to handle ID
+                    const vitrineData = await fetchVitrineBySlug(vitrineIdentifier);
                     if (vitrineData && isMounted) {
                         const logo = vitrineData.logo || vitrineData.avatar;
                         setVitrineInfo({
@@ -70,7 +73,7 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
         };
         getVitrineData();
         return () => { isMounted = false; };
-    }, [annonce.vitrineSlug, fetchVitrineBySlug]);
+    }, [annonce.vitrineId, annonce.vitrineSlug, fetchVitrineBySlug]);
 
     // --- DONNÉES SÉCURISÉES ---
     const vitrineName = vitrineInfo?.name || 'Vendeur Inconnu';
@@ -195,7 +198,7 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
                 )}
             </TouchableOpacity>
 
-            {/* 5. Actions (WhatsApp/Partager) */}
+            {/* 5. Actions (WhatsApp/Like/Partager) */}
             <View style={[styles.actionsContainer, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.border }]}>
                 {vitrinePhone ? (
                     <WhatsAppButton
@@ -210,6 +213,16 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
                         <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Contacter</Text>
                     </View>
                 )}
+
+                {/* Bouton Like */}
+                <View style={styles.likeButtonContainer}>
+                    <LikeButton
+                        annonceId={annonce.annonceId}
+                        annonceSlug={annonce.slug}
+                        initialLikesCount={annonce.likes_count || 0}
+                        size={20}
+                    />
+                </View>
 
                 {/* Bouton Partager (inchangé) */}
                 <View style={[styles.shareButtonContainer, { borderColor: theme.colors.border }]}>
@@ -329,6 +342,16 @@ const createStyles = (theme: any) => StyleSheet.create({
     whatsappDisabled: {
         backgroundColor: theme.colors.textSecondary, // Use theme token instead of 'gray'
         opacity: 0.5,
+    },
+    likeButtonContainer: {
+        width: 60,
+        height: 40,
+        borderWidth: 1,
+        borderRadius: theme.borderRadius.s,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderColor: theme.colors.border,
+        marginRight: theme.spacing.s,
     },
     shareButtonContainer: {
         width: 100, // Slightly smaller to look cleaner

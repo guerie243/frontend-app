@@ -99,9 +99,10 @@ export const AnnonceDetailScreen = () => {
 
     useEffect(() => {
         const loadVitrineData = async () => {
-            if (currentAnnonce?.vitrineSlug) {
+            const vitrineIdentifier = currentAnnonce?.vitrineId || currentAnnonce?.vitrineSlug;
+            if (vitrineIdentifier) {
                 try {
-                    const data = await fetchVitrineBySlug(currentAnnonce.vitrineSlug);
+                    const data = await fetchVitrineBySlug(vitrineIdentifier);
                     setVitrineInfo(data);
                 } catch (e) {
                     console.error("Erreur chargement vitrine", e);
