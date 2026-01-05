@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import * as Linking from 'expo-linking';
 import { useNavigation } from '@react-navigation/native';
-import { ENV } from '../config/env';
+import { Platform } from 'react-native';
 
 /**
  * LinkingHandler
@@ -17,38 +17,75 @@ export const LinkingHandler = () => {
     const url = Linking.useURL();
 
     useEffect(() => {
-        if (!url) return;
+        // Fallback pour le Web si Linking.useURL() ne renvoie rien au montage initial
+        const currentUrl = url || (Platform.OS === 'web' ? window.location.href : null);
+
+        if (!currentUrl) return;
 
         const handleDeepLink = (rawUrl: string) => {
-            const { path } = Linking.parse(rawUrl);
-            if (!path) return;
+            console.log('[LinkingHandler] URL brute détectée :', rawUrl);
 
-            console.log('[LinkingHandler] URL détectée :', path);
+            const { path: parsedPath } = Linking.parse(rawUrl);
 
-            // 1. Détection d'Annonce (/a/:slug)
-            if (path.includes('a/')) {
-                const slug = path.split('a/')[1]?.split('?')[0];
+            // Sur le Web, Linking.parse peut parfois retourner un path vide si l'URL est complexe.
+            // On essaie d'extraire le path manuellement si nécessaire.
+            let path = parsedPath;
+            if (!path && rawUrl.includes('://')) {
+                try {
+                    const urlObj = new URL(rawUrl);
+                    path = urlObj.pathname;
+                } catch (e) {
+                    // Fallback basique
+                    const parts = rawUrl.split('://')[1]?.split('/');
+                    if (parts && parts.length > 1) {
+                        path = parts.slice(1).join('/');
+                    }
+                }
+            }
+
+            if (!path || path === '/') return;
+
+            // Nettoyage : enlever le leading slash pour l'analyse
+            const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+            console.log('[LinkingHandler] Path analysé :', cleanPath);
+
+            // 1. Détection d'Annonce (a/slug ou /a/slug)
+            if (cleanPath.startsWith('a/')) {
+                let slug = cleanPath.split('a/')[1]?.split('?')[0];
                 if (slug) {
+                    // Nettoyer les éventuels slashes traînants
+                    slug = slug.replace(/\/$/, '');
+                    // Décoder pour gérer les caractères spéciaux (@, espaces, etc.)
+                    slug = decodeURIComponent(slug);
+
+                    console.log('[LinkingHandler] Navigation vers AnnonceDetail :', slug);
                     navigation.navigate('AnnonceDetail', { slug });
                 }
             }
 
-            // 2. Détection de Vitrine (/v/:slug)
-            else if (path.includes('v/')) {
-                const slug = path.split('v/')[1]?.split('?')[0];
+            // 2. Détection de Vitrine (v/slug ou /v/slug)
+            else if (cleanPath.startsWith('v/')) {
+                let slug = cleanPath.split('v/')[1]?.split('?')[0];
                 if (slug) {
+                    slug = slug.replace(/\/$/, '');
+                    slug = decodeURIComponent(slug);
+
+                    console.log('[LinkingHandler] Navigation vers VitrineDetail :', slug);
                     navigation.navigate('VitrineDetail', { slug });
                 }
             }
 
             // 3. Autres routes simples
-            else if (path === 'login') navigation.navigate('Login');
-            else if (path === 'register') navigation.navigate('Register');
-            else if (path === 'settings') navigation.navigate('Settings');
+            else {
+                const simplePage = cleanPath.split('?')[0].replace(/\/$/, '');
+                if (simplePage === 'login') navigation.navigate('Login');
+                else if (simplePage === 'register') navigation.navigate('Register');
+                else if (simplePage === 'settings') navigation.navigate('Settings');
+            }
         };
 
-        handleDeepLink(url);
+        handleDeepLink(currentUrl);
     }, [url, navigation]);
 
-    return null; // Ce composant ne fait que de la logique
+    return null;
 };
