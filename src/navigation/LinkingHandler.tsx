@@ -49,7 +49,8 @@ export const LinkingHandler = () => {
             const cleanPath = path.replace(/^\/+/, '').replace(/\/+$/, '');
             console.log('[LinkingHandler] Path nettoyé :', cleanPath);
 
-            // Petit délai pour s'assurer que le StackNavigator est prêt après le Splash
+            // Délai plus important pour s'assurer que le StackNavigator est prêt après le Splash
+            // On passe de 100ms à 300ms pour plus de sécurité sur Web
             setTimeout(() => {
                 try {
                     // 1. Détection d'Annonce (a/slug ou /a/slug)
@@ -59,8 +60,18 @@ export const LinkingHandler = () => {
 
                         if (slug) {
                             slug = decodeURIComponent(slug).split('?')[0];
-                            console.log('[LinkingHandler] Navigation vers AnnonceDetail :', slug);
-                            navigation.navigate('AnnonceDetail', { slug });
+                            console.log('[LinkingHandler] Navigation forcée vers AnnonceDetail :', slug);
+
+                            // Utilisation de reset pour s'assurer que l'on écrase l'état initial (MainTabs)
+                            // et qu'on évite les doubles redirections bizarres sur Web.
+                            // On garde MainTabs en dessous pour que le bouton retour fonctionne.
+                            navigation.reset({
+                                index: 1,
+                                routes: [
+                                    { name: 'MainTabs' },
+                                    { name: 'AnnonceDetail', params: { slug } }
+                                ],
+                            });
                         }
                     }
 
@@ -71,8 +82,15 @@ export const LinkingHandler = () => {
 
                         if (slug) {
                             slug = decodeURIComponent(slug).split('?')[0];
-                            console.log('[LinkingHandler] Navigation vers VitrineDetail :', slug);
-                            navigation.navigate('VitrineDetail', { slug });
+                            console.log('[LinkingHandler] Navigation forcée vers VitrineDetail :', slug);
+
+                            navigation.reset({
+                                index: 1,
+                                routes: [
+                                    { name: 'MainTabs' },
+                                    { name: 'VitrineDetail', params: { slug } }
+                                ],
+                            });
                         }
                     }
 
@@ -86,7 +104,7 @@ export const LinkingHandler = () => {
                 } catch (error) {
                     console.error('[LinkingHandler] Erreur lors de la navigation :', error);
                 }
-            }, 100); // 100ms de sécurité
+            }, 300);
         };
 
         handleDeepLink(currentUrl);
