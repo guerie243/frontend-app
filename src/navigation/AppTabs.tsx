@@ -16,12 +16,19 @@ export const AppTabs = () => {
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
+                tabBarHideOnKeyboard: true,
                 tabBarStyle: {
                     backgroundColor: theme.colors.surface,
                     borderTopColor: theme.colors.border,
-                    height: 60,
-                    paddingBottom: 8,
-                    paddingTop: 8,
+                    height: 52,
+                },
+                tabBarLabelStyle: {
+                    fontSize: 10,
+                    fontWeight: '500',
+                    paddingBottom: 4,
+                },
+                tabBarIconStyle: {
+                    marginTop: 4,
                 },
                 tabBarActiveTintColor: theme.colors.primary,
                 tabBarInactiveTintColor: theme.colors.textSecondary,

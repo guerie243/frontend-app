@@ -253,8 +253,8 @@ export const HomeScreen = () => {
     const combinedData = useMemo(() => {
         // CHANGEMENT: On retire SEARCH_BAR de la liste car elle est maintenant au-dessus
         const baseItems = isSearchActive
-            ? []
-            : [{ type: 'BANNER' }, { type: 'CATEGORIES' }];
+            ? [{ type: 'SEARCH_BAR' }]
+            : [{ type: 'SEARCH_BAR' }, { type: 'BANNER' }, { type: 'CATEGORIES' }];
 
         const items = [...baseItems];
 
@@ -305,33 +305,16 @@ export const HomeScreen = () => {
         return items;
     }, [annonces, isSearchActive, vitrines, isLoading, error]);
 
-    // SUPPRESSION DE LA LOGIQUE NATIVE STICKY
-    // const stickyIndices = isSearchActive ? [] : [1];
-
-    // NOUVELLE LOGIQUE STICKY CUSTOM
-    const [bannerHeight, setBannerHeight] = useState(0);
-    const [showStickyCategory, setShowStickyCategory] = useState(false);
-
-    const checkSticky = (contentOffsetY: number) => {
-        // Si on n'a pas de bannière (ex: mode recherche), pas de sticky custom nécessaire
-        if (isSearchActive) {
-            if (showStickyCategory) setShowStickyCategory(false);
-            return;
-        }
-
-        // Si on a descendu plus bas que la hauteur de la bannière, on affiche le sticky
-        if (contentOffsetY >= bannerHeight && bannerHeight > 0) {
-            if (!showStickyCategory) setShowStickyCategory(true);
-        } else {
-            if (showStickyCategory) setShowStickyCategory(false);
-        }
-    };
-
-    const handleScrollWithSticky = (event: any) => {
-        handleScroll(event); // Appel de la fonction originale pour le bouton "Retour en haut"
-        const currentOffsetY = event.nativeEvent.contentOffset.y;
-        checkSticky(currentOffsetY);
-    };
+    // STICKY HEADER INDICES
+    // isSearchActive: SEARCH_BAR=0, CATEGORIES=1 (if no banner). 
+    // Actually, when isSearchActive, we probably still want categories? 
+    // In current implementation, isSearchActive removes BANNER and CATEGORIES from combinedData baseItems.
+    // Wait, let's look at line 256. If isSearchActive, baseItems = [].
+    // I should change that to include SEARCH_BAR at least.
+    const stickyIndices = useMemo(() => {
+        if (isSearchActive) return [0]; // Search bar sticks if searching? Or maybe not.
+        return [2]; // SEARCH_BAR=0, BANNER=1, CATEGORIES=2
+    }, [isSearchActive]);
 
 
     // COMPOSANT RENDER DES CATÉGORIES (Réutilisé)
@@ -359,14 +342,42 @@ export const HomeScreen = () => {
 
     const renderItem = ({ item }: { item: any }) => {
         switch (item.type) {
+            case 'SEARCH_BAR':
+                return (
+                    <View style={[styles.headerSection, { backgroundColor: theme.colors.background }]}>
+                        <SearchBar
+                            value={searchQuery}
+                            onChangeText={handleSearchChange}
+                            placeholder="Rechercher..."
+                            containerStyle={styles.compactSearchBar}
+                            onSearch={filterBySearch}
+                        />
+
+                        {isSearchActive && (
+                            <TouchableOpacity
+                                onPress={resetToFullFeed}
+                                style={styles.backButtonContainer}
+                                accessibilityLabel="Retour à l'accueil"
+                            >
+                                <View style={styles.backButtonContent}>
+                                    <Ionicons
+                                        name="arrow-back-outline"
+                                        size={16}
+                                        color={theme.colors.primary}
+                                    />
+                                    <Text style={[styles.backButtonText, { color: theme.colors.primary }]}>
+                                        Retour
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                );
+
             case 'BANNER':
                 return (
                     <View
                         style={styles.bannerSection}
-                        onLayout={(event) => {
-                            const { height } = event.nativeEvent.layout;
-                            setBannerHeight(height);
-                        }}
                     >
                         <ImageCarousel />
                     </View>
@@ -417,91 +428,7 @@ export const HomeScreen = () => {
 
     return (
         <ScreenWrapper>
-            {/* SEARCH BAR HORS DE LA LISTE */}
-            <View style={[styles.headerSection, { backgroundColor: theme.colors.background }]}>
-                <SearchBar
-                    value={searchQuery}
-                    onChangeText={handleSearchChange}
-                    placeholder="Rechercher..."
-                    containerStyle={styles.compactSearchBar}
-                    onSearch={filterBySearch}
-                />
-
-                {isSearchActive && (
-                    <TouchableOpacity
-                        onPress={resetToFullFeed}
-                        style={styles.backButtonContainer}
-                        accessibilityLabel="Retour à l'accueil"
-                    >
-                        <View style={styles.backButtonContent}>
-                            <Ionicons
-                                name="arrow-back-outline"
-                                size={16}
-                                color={theme.colors.primary}
-                            />
-                            <Text style={[styles.backButtonText, { color: theme.colors.primary }]}>
-                                Retour
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-                )}
-            </View>
-
-            {/* STICKY HEADER MANUEL (OVERLAY) */}
-            {showStickyCategory && !isSearchActive && (
-                <View style={{
-                    position: 'absolute',
-                    top: isSearchActive ? 0 : 60, // Ajuster selon la hauteur réelle de headerSection si besoin, mais ici headerSection est au dessus.
-                    // ATTENTION: La FlatList est SOUS le headerSection. 
-                    // Si ScreenWrapper est en flex, le headerSection prend de la place.
-                    // Le 'top' absolu part du haut du ScreenWrapper (ou du parent relatif le plus proche).
-                    // ScreenWrapper -> View (container) -> {Children}.
-                    // Notre parent commun est ScreenWrapper -> View.
-                    // Donc headerSection prend de la place. FlatList est en dessous.
-                    // Si on met position: absolute, il se mettra par dessus tout.
-                    // Mais on veut qu'il soit SOUS headerSection. 
-                    // Une meilleure approche est de mettre cet overlay DANS une View qui contient aussi FlatList, 
-                    // ou juste après headerSection.
-                }}>
-                    {/* Non, c'est plus simple: Mettre position 'absolute' avec top = hauteur de headerSection.
-                       Mais on ne connait pas la hauteur exacte.
-                       
-                       ALTERNATIVE PLUS SURE:
-                       Mettre cet élément juste après headerSection dans le flux normal (zIndex élevé) 
-                       mais avec position: 'absolute' et top: [hauteur de headerSection].
-                       
-                       Attendez, si je le mets dans le flux normal juste après headerSection mais en absolute...
-                       Le plus simple est: 
-                       <View style={{ zIndex: 100 }}>{showSticky && renderCategories()}</View> 
-                       Mais ça va prendre de la place? Non si absolute.
-                       
-                       Essai: Le headerSection a une taille fixe (environ).
-                       headerSection padding info: vertical S+M = ~8+16 = 24. + Height 40. + border 1. ~ 65px.
-                       
-                       On va mesurer headerSection aussi pour être parfait. */}
-                </View>
-            )}
-
-            {/* CORRECTION STRUCTURE:
-                 On veut que l'overlay soit par dessus la FlatList.
-                 On va envelopper FlatList et Overlay dans un View container avec flex:1.
-             */}
-
             <View style={{ flex: 1, position: 'relative' }}>
-                {/* L'overlay doit être ICI pour être par dessus la liste */}
-                {showStickyCategory && !isSearchActive && (
-                    <View style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        zIndex: 100,
-                        elevation: 5 // Important pour Android
-                    }}>
-                        {renderCategories()}
-                    </View>
-                )}
-
                 <FlatList
                     ref={flatListRef}
                     data={combinedData}
@@ -511,8 +438,7 @@ export const HomeScreen = () => {
                         return item.slug || item.type || `index-${index}`;
                     }}
 
-                    // PLUS DE STICKY INDICES
-                    // stickyHeaderIndices={stickyIndices}
+                    stickyHeaderIndices={stickyIndices}
 
                     contentContainerStyle={styles.content}
                     showsVerticalScrollIndicator={false}
@@ -531,7 +457,7 @@ export const HomeScreen = () => {
                         < RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
                     }
 
-                    onScroll={handleScrollWithSticky}
+                    onScroll={handleScroll}
                     scrollEventThrottle={16}
                 />
             </View>
