@@ -15,19 +15,23 @@ import { Platform } from 'react-native';
 export const LinkingHandler = () => {
     const navigation = useNavigation<any>();
     const url = Linking.useURL();
-    const lastHandledUrl = useRef<string | null>(null);
+    const hasHandledInitialUrl = useRef(false);
 
     useEffect(() => {
         // Source de vérité brute pour l'URL
         let currentUrl = url;
 
-        // Sur le Web, on préfère window.location comme source de vérité immédiate
         if (Platform.OS === 'web') {
             currentUrl = window.location.href;
         }
 
-        if (!currentUrl || currentUrl === lastHandledUrl.current) return;
-        lastHandledUrl.current = currentUrl;
+        if (!currentUrl || hasHandledInitialUrl.current) return;
+
+        // On évite de retraiter si l'URL contient déjà nos marqueurs de navigation interne (ex: /MainTabs)
+        // car cela signifie que React Navigation est déjà en train de synchroniser l'URL.
+        if (currentUrl.includes('/MainTabs') || currentUrl.includes('AnnonceDetail') || currentUrl.includes('VitrineDetail')) {
+            return;
+        }
 
         const handleDeepLink = (rawUrl: string) => {
             console.log('[LinkingHandler] URL brute détectée :', rawUrl);
@@ -36,38 +40,32 @@ export const LinkingHandler = () => {
             let queryParams: Record<string, string> = {};
 
             if (Platform.OS === 'web') {
-                // Sur le Web, on utilise directement window.location
                 path = window.location.pathname;
                 const searchParams = new URLSearchParams(window.location.search);
-                searchParams.forEach((value, key) => {
-                    queryParams[key] = value;
-                });
+                searchParams.forEach((value, key) => queryParams[key] = value);
             } else {
-                // Sur Mobile, on utilise Linking.parse d'Expo
                 const parsed = Linking.parse(rawUrl);
                 path = parsed.path || '';
                 queryParams = (parsed.queryParams as Record<string, string>) || {};
             }
 
-            // Nettoyage : enlever les slashes de début et de fin
             const cleanPath = path.replace(/^\/+/, '').replace(/\/+$/, '');
-            console.log('[LinkingHandler] Path nettoyé :', cleanPath);
-            console.log('[LinkingHandler] Query Params :', queryParams);
-
             if (!cleanPath || cleanPath === '/') return;
 
-            // Délai pour s'assurer que le StackNavigator est prêt après le Splash
+            console.log('[LinkingHandler] Processing path:', cleanPath);
+
             setTimeout(() => {
                 try {
-                    // 1. Détection d'Annonce
-                    // Formats supportés : /a/slug, /AnnonceDetail?slug=slug
+                    let handled = false;
+
+                    // 1. Détection d'Annonce (/a/slug ou /AnnonceDetail)
                     if (cleanPath.startsWith('a/') || cleanPath === 'AnnonceDetail') {
                         const segments = cleanPath.split('/');
                         let slug = queryParams.slug || queryParams.annonceSlug || segments[1];
 
                         if (slug) {
                             slug = decodeURIComponent(slug).split('?')[0];
-                            console.log('[LinkingHandler] Routing vers AnnonceDetail slug:', slug);
+                            console.log('[LinkingHandler] Routing vers AnnonceDetail :', slug);
 
                             navigation.reset({
                                 index: 1,
@@ -76,18 +74,18 @@ export const LinkingHandler = () => {
                                     { name: 'AnnonceDetail', params: { slug } }
                                 ],
                             });
+                            handled = true;
                         }
                     }
 
-                    // 2. Détection de Vitrine
-                    // Formats supportés : /v/slug, /VitrineDetail?slug=slug
+                    // 2. Détection de Vitrine (/v/slug ou /VitrineDetail)
                     else if (cleanPath.startsWith('v/') || cleanPath === 'VitrineDetail') {
                         const segments = cleanPath.split('/');
                         let slug = queryParams.slug || queryParams.vitrineSlug || segments[1];
 
                         if (slug) {
                             slug = decodeURIComponent(slug).split('?')[0];
-                            console.log('[LinkingHandler] Routing vers VitrineDetail slug:', slug);
+                            console.log('[LinkingHandler] Routing vers VitrineDetail :', slug);
 
                             navigation.reset({
                                 index: 1,
@@ -96,25 +94,26 @@ export const LinkingHandler = () => {
                                     { name: 'VitrineDetail', params: { slug } }
                                 ],
                             });
+                            handled = true;
                         }
                     }
 
-                    // 3. Autres routes simples
+                    // 3. Autres routes
                     else {
                         const simplePage = cleanPath.split('?')[0];
-                        console.log('[LinkingHandler] Tentative de navigation simple vers :', simplePage);
-                        if (simplePage === 'login') navigation.navigate('Login');
-                        else if (simplePage === 'register') navigation.navigate('Register');
-                        else if (simplePage === 'settings') navigation.navigate('Settings');
-                        else if (simplePage === 'AnnonceModificationMain') {
-                            const slug = queryParams.slug || queryParams.annonceSlug;
-                            if (slug) navigation.navigate('AnnonceModificationMain', { annonceSlug: slug });
+                        if (['login', 'register', 'settings'].includes(simplePage)) {
+                            navigation.navigate(simplePage.charAt(0).toUpperCase() + simplePage.slice(1));
+                            handled = true;
                         }
                     }
+
+                    if (handled) {
+                        hasHandledInitialUrl.current = true;
+                    }
                 } catch (error) {
-                    console.error('[LinkingHandler] Erreur lors de la navigation :', error);
+                    console.error('[LinkingHandler] Erreur de navigation :', error);
                 }
-            }, 300);
+            }, 500); // Délai accru pour laisser le temps au Stack d'être prêt
         };
 
         handleDeepLink(currentUrl);
