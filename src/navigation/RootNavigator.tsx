@@ -24,6 +24,7 @@ import { AppStack } from './AppStack';
 import { View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { AppLoadingScreen } from '../components/AppLoadingScreen';
+import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 
 /**
  * Composant RootNavigator
@@ -52,7 +53,11 @@ export const RootNavigator = () => {
 
     return (
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-            <AppStack />
+            <NavigationIndependentTree>
+                <NavigationContainer>
+                    <AppStack />
+                </NavigationContainer>
+            </NavigationIndependentTree>
         </View>
     );
 };
