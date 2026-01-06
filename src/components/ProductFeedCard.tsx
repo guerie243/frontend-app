@@ -6,7 +6,7 @@ import { WhatsAppButton } from './WhatsAppButton';
 import { ProductImageGrid } from './ProductImageGrid';
 import { Annonce } from '../types';
 import Avatar from './Avatar';
-import { useVitrines } from '../hooks/useVitrines';
+import { useVitrineDetail } from '../hooks/useVitrines';
 import { Ionicons } from '@expo/vector-icons';
 import { getRelativeTime } from '../utils/dateUtils';
 import { ENV } from '../config/env';
@@ -15,12 +15,6 @@ import { LikeButton } from './LikeButton';
 
 // Dimensions
 const { width } = Dimensions.get('window');
-
-interface VitrineInfo {
-    name: string;
-    logoSource: any;
-    contactPhone: string;
-}
 
 interface ProductFeedCardProps {
     annonce: Annonce;
@@ -31,10 +25,10 @@ interface ProductFeedCardProps {
 export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCardPress, onVitrinePress }) => {
     const { theme } = useTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
-    const { fetchVitrineBySlug } = useVitrines();
 
-    const [vitrineInfo, setVitrineInfo] = useState<VitrineInfo | null>(null);
-    const [isLoadingVitrine, setIsLoadingVitrine] = useState(true);
+    // Utilisation de l'identifiant disponible (ID ou Slug) pour récupérer les détails de la vitrine
+    const vitrineIdentifier = annonce.vitrineId || annonce.vitrineSlug;
+    const { data: vitrineData, isLoading: isLoadingVitrine } = useVitrineDetail(vitrineIdentifier || '');
 
     if (!annonce || !annonce.slug) {
         return (
@@ -44,41 +38,12 @@ export const ProductFeedCard: React.FC<ProductFeedCardProps> = ({ annonce, onCar
         );
     }
 
-    // --- Logique de chargement Vitrine (Inchangée) ---
-    useEffect(() => {
-        let isMounted = true;
-        const getVitrineData = async () => {
-            const vitrineIdentifier = annonce.vitrineId || annonce.vitrineSlug;
-            if (vitrineIdentifier) {
-                if (isMounted) setIsLoadingVitrine(true);
-                try {
-                    // fetchVitrineBySlug might need to be renamed or overloaded to handle ID
-                    const vitrineData = await fetchVitrineBySlug(vitrineIdentifier);
-                    if (vitrineData && isMounted) {
-                        const logo = vitrineData.logo || vitrineData.avatar;
-                        setVitrineInfo({
-                            name: vitrineData.name || 'Vitrine Pro',
-                            logoSource: logo ? { uri: logo } : DEFAULT_IMAGES.avatar,
-                            contactPhone: vitrineData.contact?.phone || '',
-                        });
-                    }
-                } catch (error) {
-                    console.error("Erreur chargement vitrine:", error);
-                } finally {
-                    if (isMounted) setIsLoadingVitrine(false);
-                }
-            } else {
-                if (isMounted) setIsLoadingVitrine(false);
-            }
-        };
-        getVitrineData();
-        return () => { isMounted = false; };
-    }, [annonce.vitrineId, annonce.vitrineSlug, fetchVitrineBySlug]);
-
     // --- DONNÉES SÉCURISÉES ---
-    const vitrineName = vitrineInfo?.name || 'Vendeur Inconnu';
-    const vitrineLogoSource = vitrineInfo?.logoSource || DEFAULT_IMAGES.avatar;
-    const vitrinePhone = vitrineInfo?.contactPhone;
+    const vitrineName = vitrineData?.name || 'Vendeur Inconnu';
+    // Priorité : Logo de la vitrine > Avatar de l'utilisateur > Image par défaut
+    const logoUrl = vitrineData?.logo || vitrineData?.avatar;
+    const vitrineLogoSource = logoUrl ? { uri: logoUrl } : DEFAULT_IMAGES.avatar;
+    const vitrinePhone = vitrineData?.contact?.phone || '';
 
     // Lien public spécifique à l'annonce (le 'pagePath')
     const pagePath = `a/${annonce.slug}`;

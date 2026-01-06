@@ -50,43 +50,51 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
 
+  // État pour suivre les images que l'on a autorisé à charger. 
+  // On commence par charger la 1ère et la 2ème image par défaut.
+  const [loadedIndices, setLoadedIndices] = useState<Set<number>>(new Set([0, 1]));
+
   const normalizedImages = useMemo(() => normalizeAndFlattenImages(images), [images]);
   const imageCount = normalizedImages.length;
 
-  // ⭐️ CRITIQUE : Calcul des points exacts où le ScrollView doit s'arrêter pour centrer l'item.
-  // L'arrêt doit être au début de chaque item, là où l'item commencerait.
   const snapToOffsets = useMemo(() => {
     return normalizedImages.map((_, index) => {
-      // Offset de l'item = (Index * Largeur de l'item) + (Index * Espace entre les items)
       return index * (ITEM_WIDTH + SPACING);
     });
   }, [normalizedImages.length]);
 
-
-  // Fonction appelée à la fin d'un défilement manuel
-  const handleMomentumScrollEnd = (event: any) => {
+  // ✅ NOUVEAU : Gestion du Scroll en temps réel pour mettre à jour l'index et le chargement
+  const handleScroll = (event: any) => {
     const scrollOffset = event.nativeEvent.contentOffset.x;
 
-    // Le calcul de l'index doit être basé sur les offsets pour la précision.
+    // Calcul de l'index arrondi
     const index = Math.round(scrollOffset / (ITEM_WIDTH + SPACING));
-    if (index !== currentIndex) {
+
+    // Si on change d'index (ou si on est au tout début), on met à jour
+    if (index !== currentIndex && index >= 0 && index < imageCount) {
       setCurrentIndex(index);
 
-      // Marquer l'index actuel et le suivant comme "à charger"
+      // ⚡️ LAZY LOADING AMÉLIORÉ : On charge l'image courante ET la suivante
       setLoadedIndices(prev => {
+        // Optimisation : ne créer un nouveau Set que si nécessaire
+        if (prev.has(index) && (index === imageCount - 1 || prev.has(index + 1))) {
+          return prev;
+        }
         const next = new Set(prev);
         next.add(index);
         if (index < imageCount - 1) next.add(index + 1);
         return next;
       });
     }
+
+    // Animation standard
+    Animated.event(
+      [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+      { useNativeDriver: false }
+    )(event);
   };
 
-  // État pour suivre les images que l'on a autorisé à charger
-  const [loadedIndices, setLoadedIndices] = useState<Set<number>>(new Set([0, 1]));
-
   if (imageCount === 0) {
-    // Rendu du placeholder inchangé
     return (
       <Animated.View style={{ height, backgroundColor: '#EFEFEF', justifyContent: 'center', alignItems: 'center' }}>
         <Image
@@ -99,42 +107,28 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
     );
   }
 
-  // Rendu Principal du Carrousel
   return (
     <Animated.View style={{ height }}>
       <Animated.ScrollView
         ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-
-        // ⭐️ CRITIQUE : Utilisation de snapToOffsets pour le centrage parfait
         decelerationRate="fast"
         snapToOffsets={snapToOffsets}
-        // Le padding horizontal assure que la première et dernière image est centrée
         contentContainerStyle={{ paddingHorizontal: SPACING }}
-
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
-        onMomentumScrollEnd={handleMomentumScrollEnd}
+        scrollEventThrottle={16} // Fréquence de mise à jour fluide (16ms = 60fps)
+        onScroll={handleScroll}
       >
         {normalizedImages.map((image, index) => {
           const imageUri = image.uri;
-
-          // --- LOGIQUE LAZY LOADING ---
-          // On ne charge l'image que si elle est dans l'ensemble des indices autorisés (déjà vue ou suivante)
           const shouldLoad = loadedIndices.has(index);
 
-          // Déterminer la source finale
           let source: any = null;
           if (shouldLoad) {
             source = imageErrors.has(index) ? DEFAULT_IMAGES.annonce : imageUri;
           }
 
           return (
-            // La marge à droite est l'espacement entre les items.
             <TouchableOpacity
               key={index}
               activeOpacity={onImagePress ? 0.9 : 1}
@@ -152,7 +146,7 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
                   source={source}
                   style={styles.image}
                   contentFit="contain"
-                  transition={300}
+                  transition={200} // Transition plus courte pour réactivité
                   cachePolicy="memory-disk"
                   onError={() => {
                     setImageErrors(prev => new Set(prev).add(index));
@@ -172,7 +166,7 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
         })}
       </Animated.ScrollView>
 
-      {/* Indicateur de compteur d'images (ex: 2/5) */}
+      {/* Indicateur de compteur */}
       {imageCount > 1 && (
         <View style={styles.counterContainer}>
           <Text style={styles.counterText}>
