@@ -75,17 +75,20 @@ export const useAnnonceFeed = (limit = 20, categoryId?: string | null, search?: 
     });
 };
 
-export const useAnnoncesByVitrine = (vitrineSlug: string, limit = 10) => {
+export const useAnnoncesByVitrine = (vitrineIdentifiant: string, limit = 10) => {
     return useInfiniteQuery({
-        queryKey: annonceKeys.byVitrine(vitrineSlug),
-        queryFn: ({ pageParam = 1 }) => annonceService.getAnnoncesByVitrine(vitrineSlug, pageParam, limit),
+        // On utilise l'identifiant (ID ou Slug) dans la clé de query
+        queryKey: annonceKeys.byVitrine(vitrineIdentifiant),
+        queryFn: ({ pageParam = 1 }) => annonceService.getAnnoncesByVitrine(vitrineIdentifiant, pageParam, limit),
         initialPageParam: 1,
         getNextPageParam: (lastPage, allPages) => {
-            if (lastPage.length === limit) {
+            // Correction pagination : on continue tant qu'on a reçu autant d'items que la limite demandée
+            if (lastPage && lastPage.length === limit) {
                 return allPages.length + 1;
             }
             return undefined;
-        }
+        },
+        enabled: !!vitrineIdentifiant // Ne pas lancer la requête si l'identifiant est vide
     });
 };
 

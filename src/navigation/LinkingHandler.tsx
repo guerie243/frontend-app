@@ -84,8 +84,9 @@ export const LinkingHandler = () => {
                         let slug = queryParams.slug || queryParams.vitrineSlug || segments[1];
 
                         if (slug) {
+                            // Nettoyage du slug et gestion des IDs potentiels
                             slug = decodeURIComponent(slug).split('?')[0];
-                            console.log('[LinkingHandler] Routing vers VitrineDetail :', slug);
+                            console.log('[LinkingHandler] Routing vers VitrineDetail avec slug/id :', slug);
 
                             navigation.reset({
                                 index: 1,

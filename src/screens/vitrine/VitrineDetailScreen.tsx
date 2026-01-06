@@ -68,6 +68,11 @@ export const VitrineDetailScreen = () => {
 
     const displayedVitrine = slug ? detailVitrine : (myVitrines?.[0] || null);
 
+    // RECUPERATION STRATEGIE : ID vs Slug
+    // On privilégie l'ID s'il est disponible (depuis detailVitrine ou myVitrines)
+    // Sinon on attend (enabled: !!vitrineId)
+    const vitrineId = displayedVitrine?.id || displayedVitrine?._id || displayedVitrine?.vitrineId;
+
     const {
         data: annoncedata,
         fetchNextPage,
@@ -75,7 +80,7 @@ export const VitrineDetailScreen = () => {
         isLoading: annoncesLoading,
         refetch: refetchAnnonces,
         isRefetching: isRefreshingAnnonces
-    } = useAnnoncesByVitrine(displayedVitrine?.slug || '', 10);
+    } = useAnnoncesByVitrine(vitrineId || '', 10); // On passe l'ID, pas le slug
 
     const annonces = useMemo(() => {
         return annoncedata?.pages.flat() || [];
