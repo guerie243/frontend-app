@@ -2,12 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     FlatList,
-    Image,
     Dimensions,
     StyleSheet,
     Text,
     Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 
 // =========================================================
 // 🎯 OÙ IMPORTER LA LISTE D'IMAGES (Début)
@@ -97,7 +97,7 @@ const ImageCarousel = () => {
     };
 
     // --- Fonctions de Rendu ---
-    const renderItem = ({ item, index }) => {
+    const renderItem = ({ item, index }: { item: any; index: number }) => {
         // Calcule la marge de droite : seulement CARD_SPACING entre les cartes
         const isLastItem = index === carouselImages.length - 1;
         // Pour la dernière carte, on ne veut pas de CARD_SPACING car le paddingRight
@@ -110,6 +110,9 @@ const ImageCarousel = () => {
                 <Image
                     source={item.source}
                     style={styles.image}
+                    contentFit="cover"
+                    transition={200}
+                    cachePolicy="memory-disk"
                 />
                 <Text style={styles.titleText}>{item.title}</Text>
             </View>

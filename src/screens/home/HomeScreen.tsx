@@ -4,7 +4,7 @@ import { ActivityIndicator, Dimensions, FlatList, RefreshControl, ScrollView, St
 import { ProductFeedCard } from '../../components/ProductFeedCard';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
 import { useTheme } from '../../context/ThemeContext';
-import { useAnnonces } from '../../hooks/useAnnonces';
+import { useAnnonceFeed } from '../../hooks/useAnnonces';
 
 // Composants
 import { CategoryPill } from '../../components/CategoryPill';
@@ -17,28 +17,19 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Services
 import { ENV } from '../../config/env';
-import { vitrineService } from '../../services/vitrineService';
-import { Vitrine } from '../../types';
+import { useAllVitrines } from '../../hooks/useVitrines';
 
 // Données
 import { CATEGORIES_VITRINE } from '../../Data/vitrinecategorys';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// LIGNE POUR MODIFIER L'ESPACE HORIZONTAL AUTOUR DE LA BANNIÈRE
-const CAROUSEL_PADDING_HORIZONTAL = 0;
-
-
 export const HomeScreen = () => {
     const navigation = useNavigation();
     const route = useRoute();
     const { theme } = useTheme();
     const styles = useMemo(() => createStyles(theme), [theme]);
-    const { annonces, fetchFeed, isLoading, error, hasMore } = useAnnonces();
     const isFocused = useIsFocused();
-    const [page, setPage] = useState(1);
-    const [refreshing, setRefreshing] = useState(false);
-    const [showScrollTopButton, setShowScrollTopButton] = useState(false);
 
     // Recherche et Filtres
     const [searchQuery, setSearchQuery] = useState('');
@@ -46,37 +37,45 @@ export const HomeScreen = () => {
     const [activeSearchQuery, setActiveSearchQuery] = useState('');
     const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
 
-    // Vitrines
-    const [vitrines, setVitrines] = useState<Vitrine[]>([]);
-    const [isLoadingVitrines, setIsLoadingVitrines] = useState(false);
-
     const categories = CATEGORIES_VITRINE;
     const [selectedCategory, setSelectedCategory] = useState(categories[0]?.slug || '');
 
+    // QUERIES TANSTACK
+    const {
+        data: feedData,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isLoading: isFeedLoading,
+        isError: isFeedError,
+        refetch: refetchFeed,
+        isRefetching: isRefreshingFeed
+    } = useAnnonceFeed(20, activeCategoryId, activeSearchQuery);
+
+    const annonces = useMemo(() => {
+        return feedData?.pages.flatMap(page => page.data || []) || [];
+    }, [feedData]);
+
+    const {
+        data: vitrinesData,
+        isLoading: isLoadingVitrines,
+        refetch: refetchVitrines
+    } = useAllVitrines(1, 6, activeCategoryId || undefined, activeSearchQuery || undefined);
+
+    const vitrines = vitrinesData?.vitrines || [];
+
+    const [showScrollTopButton, setShowScrollTopButton] = useState(false);
     const flatListRef = React.useRef<FlatList>(null);
     const lastOffsetY = React.useRef(0);
-
-    // --- Logique de Chargement (Identique) ---
-    const loadFeed = useCallback(async (pageNum: number, categoryId?: string | null, search?: string) => {
-        try {
-            const catParam = categoryId !== undefined ? categoryId : activeCategoryId;
-            const searchParam = search !== undefined ? search : activeSearchQuery;
-            await fetchFeed(pageNum, 20, catParam || undefined, searchParam || undefined);
-            setPage(pageNum);
-        } catch (err) {
-            console.error('Error loading feed:', err);
-        }
-    }, [fetchFeed, activeCategoryId, activeSearchQuery]);
 
     useEffect(() => {
         const params = route.params as any;
         if (params?.refreshTimestamp) {
-            setPage(1);
-            loadFeed(1, activeCategoryId, activeSearchQuery);
-            // Optionnel: Scroll to top on refresh
+            refetchFeed();
+            refetchVitrines();
             flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
         }
-    }, [route.params, loadFeed, activeCategoryId, activeSearchQuery]);
+    }, [route.params, refetchFeed, refetchVitrines]);
 
 
     const handleScroll = (event: any) => {
@@ -103,27 +102,12 @@ export const HomeScreen = () => {
         search: activeSearchQuery
     }), [navigation, activeCategoryId, activeSearchQuery]);
 
-    // Charger les vitrines
-    const loadVitrines = useCallback(async (categoryId?: string | null, search?: string) => {
-        setIsLoadingVitrines(true);
-        try {
-            const catParam = categoryId !== undefined ? categoryId : activeCategoryId;
-            const searchParam = search !== undefined ? search : activeSearchQuery;
-            const result = await vitrineService.getAllVitrines(1, 6, catParam || undefined, searchParam || undefined);
-            setVitrines(result.vitrines);
-        } catch (err) {
-            console.error('Error loading vitrines:', err);
-        } finally {
-            setIsLoadingVitrines(false);
-        }
-    }, [activeCategoryId, activeSearchQuery]);
-
     useEffect(() => {
         if (isFocused) {
-            loadFeed(1, activeCategoryId, activeSearchQuery);
-            loadVitrines(activeCategoryId, activeSearchQuery);
+            refetchFeed();
+            refetchVitrines();
         }
-    }, [isFocused, loadFeed, loadVitrines]);
+    }, [isFocused, refetchFeed, refetchVitrines]);
 
     const filterBySearch = useCallback(async (query: string) => {
         const rawQuery = (query || '').trim();
@@ -137,9 +121,6 @@ export const HomeScreen = () => {
         const isVitrinePath = cleanQuery.includes('/v/') || cleanQuery.startsWith('v/');
 
         if (isUrl || isAnnoncePath || isVitrinePath) {
-            // Extraction du slug (on utilise rawQuery pour préserver les majuscules des slugs existants)
-
-            // 1. ANNONCE
             if (cleanQuery.includes('/a/') || cleanQuery.startsWith('a/')) {
                 let extractedSlug = '';
                 if (cleanQuery.includes('/a/')) {
@@ -158,7 +139,6 @@ export const HomeScreen = () => {
                 }
             }
 
-            // 2. VITRINE
             if (cleanQuery.includes('/v/') || cleanQuery.startsWith('v/')) {
                 let extractedSlug = '';
                 if (cleanQuery.includes('/v/')) {
@@ -184,15 +164,10 @@ export const HomeScreen = () => {
         setActiveCategoryId(null);
         setSelectedCategory(categories[0]?.slug || '');
 
-        // Utiliser les paramètres directement au lieu du state (async)
-        await fetchFeed(1, 20, undefined, query);
-        await loadVitrines(null, query);
-
-        setPage(1);
         flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-    }, [fetchFeed, loadVitrines, categories, handleGoToAnnonceDetail, handleGoToVitrine]);
+    }, [handleGoToAnnonceDetail, handleGoToVitrine, categories]);
 
-    const filterByCategory = useCallback(async (categorySlug: string) => {
+    const filterByCategory = useCallback((categorySlug: string) => {
         setSelectedCategory(categorySlug);
         const isReset = categorySlug === 'all' || categorySlug === categories[0]?.slug;
         const newCategoryId = isReset ? null : categorySlug;
@@ -202,122 +177,90 @@ export const HomeScreen = () => {
         setActiveSearchQuery('');
         setSearchQuery('');
 
-        // Utiliser newCategoryId directement au lieu de activeCategoryId (state async)
-        await fetchFeed(1, 20, newCategoryId || undefined, undefined);
-        await loadVitrines(newCategoryId, undefined);
-
-        setPage(1);
-
-        // REMONTER EN HAUT AU CLIC SUR UNE CATÉGORIE
         flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-    }, [fetchFeed, loadVitrines, categories]);
+    }, [categories]);
 
     const onRefresh = useCallback(async () => {
-        setRefreshing(true);
-        try {
-            await loadFeed(1);
-        } finally {
-            setRefreshing(false);
-        }
-    }, [loadFeed]);
+        await Promise.all([refetchFeed(), refetchVitrines()]);
+    }, [refetchFeed, refetchVitrines]);
 
     const loadMore = useCallback(() => {
-        if (!isLoading && hasMore) {
-            loadFeed(page + 1);
+        if (hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
         }
-    }, [isLoading, hasMore, page, loadFeed]);
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const handleSearchChange = (text: string) => {
         setSearchQuery(text);
         if (!text.trim() && isSearchActive) resetToFullFeed();
     };
 
-    const resetToFullFeed = useCallback(async () => {
+    const resetToFullFeed = useCallback(() => {
         setIsSearchActive(false);
         setActiveSearchQuery('');
         setSearchQuery('');
         setActiveCategoryId(null);
         setSelectedCategory(categories[0]?.slug || '');
 
-        // Charger tout sans filtres
-        await fetchFeed(1, 20, undefined, undefined);
-        await loadVitrines(null, undefined);
-
-        setPage(1);
         flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-    }, [fetchFeed, loadVitrines, categories]);
+    }, [categories]);
 
 
     // --- CONSTRUCTION DE LA LISTE HYBRIDE ---
 
     const combinedData = useMemo(() => {
-        // CHANGEMENT: On retire SEARCH_BAR de la liste car elle est maintenant au-dessus
         const baseItems = isSearchActive
             ? [{ type: 'SEARCH_BAR' }]
             : [{ type: 'SEARCH_BAR' }, { type: 'BANNER' }, { type: 'CATEGORIES' }];
 
         const items = [...baseItems];
 
-        // Insérer les annonces et les blocs vitrines
-        const itemsToProcess = Array.isArray(annonces) ? annonces : [];
+        const itemsToProcess = annonces;
         let vitrineBlockInserted = false;
 
-        if (isLoading && (itemsToProcess.length === 0)) {
+        if (isFeedLoading && itemsToProcess.length === 0) {
             items.push({ type: 'LOADING_STATE' } as any);
         } else if (itemsToProcess.length > 0) {
             itemsToProcess.forEach((annonce: any, index: number) => {
                 items.push(annonce);
 
-                // Insérer le bloc vitrine après la 5ème annonce (index 4)
                 if (index === 4 && vitrines.length > 0) {
                     items.push({ type: 'VITRINE_BLOCK' });
                     vitrineBlockInserted = true;
                 }
-                // Puis après chaque 15 annonces (index 19, 34, 49, etc.)
                 else if (index > 4 && (index - 4) % 15 === 0 && vitrines.length > 0) {
                     items.push({ type: 'VITRINE_BLOCK' });
                 }
             });
 
-            // Si on a moins de 5 annonces, on met le bloc vitrine à la fin
             if (!vitrineBlockInserted && vitrines.length > 0) {
                 items.push({ type: 'VITRINE_BLOCK' });
             }
-        } else if (!isLoading) {
-            // Si pas d'annonces mais des vitrines
+        } else if (!isFeedLoading) {
             if (vitrines.length > 0) {
                 items.push({ type: 'VITRINE_BLOCK' });
-                // Optionnel: ajouter un petit message qu'il n'y a pas d'annonces mais voici les vitrines
                 items.push({
                     type: 'EMPTY_STATE',
                     message: "Aucune annonce dans cette catégorie, mais voici les vitrines correspondantes."
                 } as any);
             } else {
-                // Rien du tout
                 items.push({
                     type: 'EMPTY_STATE',
-                    error: error,
-                    message: error ? error : "Aucune annonce ni vitrine ne correspond à votre recherche ou catégorie."
+                    error: isFeedError,
+                    message: isFeedError ? "erreur réessayez" : "Aucune annonce ni vitrine ne correspond à votre recherche ou catégorie."
                 } as any);
             }
         }
 
         return items;
-    }, [annonces, isSearchActive, vitrines, isLoading, error]);
+    }, [annonces, isSearchActive, vitrines, isFeedLoading, isFeedError]);
 
-    // STICKY HEADER INDICES
-    // isSearchActive: SEARCH_BAR=0, CATEGORIES=1 (if no banner). 
-    // Actually, when isSearchActive, we probably still want categories? 
-    // In current implementation, isSearchActive removes BANNER and CATEGORIES from combinedData baseItems.
-    // Wait, let's look at line 256. If isSearchActive, baseItems = [].
-    // I should change that to include SEARCH_BAR at least.
     const stickyIndices = useMemo(() => {
-        if (isSearchActive) return [0]; // Search bar sticks if searching? Or maybe not.
-        return [2]; // SEARCH_BAR=0, BANNER=1, CATEGORIES=2
+        if (isSearchActive) return [0];
+        return [2];
     }, [isSearchActive]);
 
 
-    // COMPOSANT RENDER DES CATÉGORIES (Réutilisé)
     const renderCategories = () => (
         <View style={[styles.categoriesSection, { backgroundColor: theme.colors.background }]}>
             <ScrollView
@@ -376,9 +319,7 @@ export const HomeScreen = () => {
 
             case 'BANNER':
                 return (
-                    <View
-                        style={styles.bannerSection}
-                    >
+                    <View style={styles.bannerSection}>
                         <ImageCarousel />
                     </View>
                 );
@@ -437,26 +378,20 @@ export const HomeScreen = () => {
                         if (item.type === 'VITRINE_BLOCK') return `vitrine-block-${index}`;
                         return item.slug || item.type || `index-${index}`;
                     }}
-
                     stickyHeaderIndices={stickyIndices}
-
                     contentContainerStyle={styles.content}
                     showsVerticalScrollIndicator={false}
-
                     ListEmptyComponent={null}
                     ListFooterComponent={
-                        isLoading && annonces?.length > 0 ? (
+                        isFetchingNextPage ? (
                             <View style={styles.footer}><ActivityIndicator size="small" color={theme.colors.primary} /></View>
                         ) : null
                     }
-
                     onEndReached={loadMore}
                     onEndReachedThreshold={0.5}
-
                     refreshControl={
-                        < RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+                        <RefreshControl refreshing={isRefreshingFeed} onRefresh={onRefresh} tintColor={theme.colors.primary} />
                     }
-
                     onScroll={handleScroll}
                     scrollEventThrottle={16}
                 />
@@ -471,7 +406,7 @@ export const HomeScreen = () => {
                     <Ionicons name="arrow-up" size={20} color={theme.colors.white} />
                 </TouchableOpacity>
             )}
-        </ScreenWrapper >
+        </ScreenWrapper>
     );
 };
 
@@ -480,7 +415,6 @@ const createStyles = (theme: any) => StyleSheet.create({
         paddingBottom: theme.spacing.l,
         backgroundColor: theme.colors.background,
     },
-    // SearchBar
     headerSection: {
         paddingHorizontal: theme.spacing.s,
         paddingTop: theme.spacing.s,
@@ -488,51 +422,39 @@ const createStyles = (theme: any) => StyleSheet.create({
         zIndex: 10,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
-        // Removed elevation/shadows for minimalist check or kept subtle if needed? 
-        // Instructions say "Design minimaliste". Flat is better.
         backgroundColor: theme.colors.background,
     },
     compactSearchBar: {
         marginBottom: 0,
         height: 40,
-        // SearchBar component itself needs to be checked if it uses theme.colors.surfaceLight, assuming it does or will receive style.
     },
-    // Styles pour le bouton de retour sous la barre de recherche
     backButtonContainer: {
-        // Aligné à gauche, prend toute la largeur pour le TouchableOpacity
         alignSelf: 'flex-start',
         marginTop: theme.spacing.s,
-        paddingHorizontal: theme.spacing.s, // Laisse un petit espace
+        paddingHorizontal: theme.spacing.s,
         paddingVertical: 3,
     },
     backButtonContent: {
-        flexDirection: 'row', // Pour aligner l'icône et le texte
+        flexDirection: 'row',
         alignItems: 'center',
-        // Petit effet visuel pour distinguer l'action
         borderRadius: theme.borderRadius.s,
     },
     backButtonText: {
         ...theme.typography.bodySmall,
         fontWeight: '600',
-        marginLeft: theme.spacing.s, // Espace entre l'icône et le texte
-    },
-    // --- Styles existants (inchangés) ---
-    resetButton: {
-        alignItems: 'center',
-        paddingVertical: 2,
+        marginLeft: theme.spacing.s,
     },
     bannerSection: {
         marginTop: theme.spacing.s,
-        marginBottom: theme.spacing.xs, // Reduced from .m to .xs for tighter spacing
-        // Carousel Padding logic was managed by constant CAROUSEL_PADDING_HORIZONTAL = 0
+        marginBottom: theme.spacing.xs,
     },
     categoriesSection: {
         paddingVertical: theme.spacing.s,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
         backgroundColor: theme.colors.background,
-        zIndex: 20, // Assure que les catégories restent au-dessus
-        elevation: 4, // Pour Android
+        zIndex: 20,
+        elevation: 4,
     },
     categoriesContent: {
         paddingHorizontal: theme.spacing.s,
@@ -554,7 +476,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     },
     feedCardContainer: {
         width: SCREEN_WIDTH,
-        // alignItems: 'flex-start', // REMOVED to allow stretch
     },
     scrollTopButton: {
         position: 'absolute',

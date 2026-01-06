@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { View, Image, StyleSheet, Pressable, Modal, ActivityIndicator, Animated, Easing } from "react-native";
-
+import { View, StyleSheet, Pressable, Modal, ActivityIndicator, Animated, Easing } from "react-native";
+import { Image } from "expo-image";
 import { DEFAULT_IMAGES } from "../constants/images";
 
 export default function CoverPhoto({
@@ -8,14 +8,21 @@ export default function CoverPhoto({
   height = 200,           // hauteur par défaut
   source,
   style,
+}: {
+  width?: string | number;
+  height?: number;
+  source?: any;
+  style?: any;
 }) {
   const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [scale] = useState(new Animated.Value(0));
 
-  const hasImage = source && source.uri;
+  const imageSource = source?.uri || source || DEFAULT_IMAGES.cover;
+  const hasImage = !!(source?.uri || source);
 
   const openModal = () => {
+    if (!hasImage) return;
     setVisible(true);
     scale.setValue(0);
     Animated.timing(scale, {
@@ -28,7 +35,7 @@ export default function CoverPhoto({
 
   return (
     <>
-      <Pressable onPress={() => hasImage && openModal()}>
+      <Pressable onPress={openModal}>
         <View
           style={[
             {
@@ -41,10 +48,13 @@ export default function CoverPhoto({
           ]}
         >
           <Image
-            source={hasImage ? source : DEFAULT_IMAGES.cover}
-            style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+            source={imageSource}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+            transition={300}
+            cachePolicy="memory-disk"
             onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
+            onLoad={() => setLoading(false)}
           />
           {loading && (
             <ActivityIndicator
@@ -60,17 +70,22 @@ export default function CoverPhoto({
       <Modal visible={visible} transparent onRequestClose={() => setVisible(false)}>
         <View style={styles.modalBackground}>
           <Pressable style={styles.closeArea} onPress={() => setVisible(false)} />
-          <Animated.Image
-            source={source}
+          <Animated.View
             style={[
-              styles.fullImage,
               {
                 width: 300,
                 height: 300 * (height / (typeof width === "number" ? width : 400)), // conserver ratio
                 transform: [{ scale: scale }],
               },
             ]}
-          />
+          >
+            <Image
+              source={source}
+              style={styles.fullImage}
+              contentFit="contain"
+              cachePolicy="memory-disk"
+            />
+          </Animated.View>
         </View>
       </Modal>
     </>
@@ -85,7 +100,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   fullImage: {
-    resizeMode: "contain",
+    width: "100%",
+    height: "100%",
     borderRadius: 10,
   },
   closeArea: {

@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, Image, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useTheme } from '../context/ThemeContext';
 import { CategoryAnnonce } from '../Data/vitrinecategorys';
 
@@ -56,7 +57,7 @@ export const CategoryPill: React.FC<CategoryPillProps> = ({
     });
 
     const pillStyle = isSelected
-        ? { backgroundColor: theme.colors.transparent } // Use logic or token
+        ? { backgroundColor: 'transparent' } // Use logic or token
         : {};
 
     const textStyle = isSelected
@@ -71,8 +72,11 @@ export const CategoryPill: React.FC<CategoryPillProps> = ({
         >
             <View style={[styles.baseImageContainer, dynamicPropsStyles.imageContainer]}>
                 <Image
-                    source={{ uri: imageUri }}
+                    source={imageUri}
                     style={dynamicPropsStyles.image}
+                    contentFit="cover"
+                    transition={300}
+                    cachePolicy="memory-disk"
                 />
             </View>
             <Text style={[styles.nameText, textStyle]}>{name}</Text>

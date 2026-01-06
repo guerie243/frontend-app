@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   TouchableOpacity,
   View,
-  Image,
   StyleSheet,
   ActivityIndicator,
   Dimensions,
@@ -11,6 +10,7 @@ import {
   Easing,
   Pressable,
 } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { compressImage } from '../utils/imageUploader';
@@ -88,9 +88,11 @@ const ImageUploadCover = ({
       <View style={[styles.container, { height }]}>
         <Pressable onPress={openModal} style={styles.content}>
           <Image
-            source={imageUri ? { uri: imageUri } : DefaultCover}
+            source={imageUri ? imageUri : DefaultCover}
             style={[styles.coverImage, { height }]}
-            resizeMode="cover"
+            contentFit="cover"
+            transition={300}
+            cachePolicy="memory-disk"
           />
           {loading && (
             <View style={styles.loadingOverlay}>
@@ -111,17 +113,22 @@ const ImageUploadCover = ({
       <Modal visible={modalVisible} transparent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalBackground}>
           <Pressable style={styles.closeArea} onPress={() => setModalVisible(false)} />
-          <Animated.Image
-            source={imageUri ? { uri: imageUri } : DefaultCover}
+          <Animated.View
             style={[
-              styles.fullImage,
               {
                 width: SCREEN_WIDTH * 0.9,
                 height: height * 3,
                 transform: [{ scale }],
               },
             ]}
-          />
+          >
+            <Image
+              source={imageUri ? imageUri : DefaultCover}
+              style={styles.fullImage}
+              contentFit="contain"
+              cachePolicy="memory-disk"
+            />
+          </Animated.View>
         </View>
       </Modal>
     </>
@@ -162,8 +169,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   fullImage: {
+    width: "100%",
+    height: "100%",
     borderRadius: 8,
-    resizeMode: "contain",
   },
   closeArea: {
     position: "absolute",

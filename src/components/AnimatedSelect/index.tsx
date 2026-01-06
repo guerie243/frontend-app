@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, Image, Platform, Pressable, SectionList, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Platform, Pressable, SectionList, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
 import { CustomInput } from "../CustomInput";
 
 // --- Interfaces de Données ---
@@ -92,7 +93,14 @@ export const SimpleSelect: React.FC<SimpleSelectProps> = ({
                 setOpenDropdown(false);
             }}
         >
-            {item.imageUri && <Image source={{ uri: item.imageUri }} style={styles.optionImage} />}
+            {item.imageUri && (
+                <Image
+                    source={item.imageUri}
+                    style={styles.optionImage}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                />
+            )}
             <Text style={styles.optionText}>{item.name}</Text>
         </Pressable>
     );
@@ -119,7 +127,12 @@ export const SimpleSelect: React.FC<SimpleSelectProps> = ({
                 {selectedOption ? (
                     <View style={styles.selectedValueWrapper}>
                         {selectedOption.imageUri && (
-                            <Image source={{ uri: selectedOption.imageUri }} style={styles.selectedImage} />
+                            <Image
+                                source={selectedOption.imageUri}
+                                style={styles.selectedImage}
+                                contentFit="cover"
+                                cachePolicy="memory-disk"
+                            />
                         )}
                         <Text style={[styles.selectedValueText, inputStyle]}>{selectedOption.name}</Text>
                     </View>

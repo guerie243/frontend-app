@@ -1,129 +1,98 @@
-import { useCallback, useState } from 'react';
+import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { annonceService } from '../services/annonceService';
 import { Annonce } from '../types';
 
+export const annonceKeys = {
+    all: ['annonces'] as const,
+    lists: () => [...annonceKeys.all, 'list'] as const,
+    list: (filters: any) => [...annonceKeys.lists(), filters] as const,
+    feeds: () => [...annonceKeys.all, 'feed'] as const,
+    feed: (filters: any) => [...annonceKeys.feeds(), filters] as const,
+    details: () => [...annonceKeys.all, 'detail'] as const,
+    detail: (slug: string) => [...annonceKeys.details(), slug] as const,
+    byVitrine: (vitrineSlug: string) => [...annonceKeys.all, 'vitrine', vitrineSlug] as const,
+};
+
 export const useAnnonces = () => {
-    const [annonces, setAnnonces] = useState<Annonce[]>([]);
-    const [currentAnnonce, setCurrentAnnonce] = useState<Annonce | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(true);
+    const queryClient = useQueryClient();
 
-    const fetchAnnoncesByVitrine = useCallback(async (vitrineSlug: string, page = 1, limit = 10) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await annonceService.getAnnoncesByVitrine(vitrineSlug, page, limit);
-            if (page === 1) {
-                setAnnonces(data);
-            } else {
-                setAnnonces((prev) => [...prev, ...data]);
-            }
-            setHasMore(data.length === limit);
-        } catch (err: any) {
-            setError(err.message || 'Failed to fetch annonces');
-            console.error(err);
-            setHasMore(false); // Stop loop on error
-        } finally {
-            setIsLoading(false);
+    const createMutation = useMutation({
+        mutationFn: (data: Partial<Annonce>) => annonceService.createAnnonce(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: annonceKeys.all });
         }
-    }, []);
+    });
 
-    const fetchAnnonceBySlug = useCallback(async (slug: string) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await annonceService.getAnnonceBySlug(slug);
-            setCurrentAnnonce(data);
-            return data;
-        } catch (err: any) {
-            setError(err.message || 'Failed to fetch annonce');
-            console.error(err);
-            return null;
-        } finally {
-            setIsLoading(false);
+    const updateMutation = useMutation({
+        mutationFn: ({ slug, data }: { slug: string; data: Partial<Annonce> }) =>
+            annonceService.updateAnnonce(slug, data),
+        onSuccess: (updatedAnnonce) => {
+            queryClient.invalidateQueries({ queryKey: annonceKeys.all });
+            queryClient.setQueryData(annonceKeys.detail(updatedAnnonce.slug), updatedAnnonce);
         }
-    }, []);
+    });
 
-    const createAnnonce = async (data: Partial<Annonce>) => {
-        setIsLoading(true);
-        try {
-            const newAnnonce = await annonceService.createAnnonce(data);
-            setAnnonces((prev) => [newAnnonce, ...prev]);
-            return newAnnonce;
-        } catch (err: any) {
-            setError(err.message || 'Failed to create annonce');
-            console.error('Failed to create annonce:', err);
-            throw err;
-        } finally {
-            setIsLoading(false);
+    const deleteMutation = useMutation({
+        mutationFn: (slug: string) => annonceService.deleteAnnonce(slug),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: annonceKeys.all });
         }
-    };
+    });
 
-    const updateAnnonce = async (slug: string, data: Partial<Annonce>) => {
-        setIsLoading(true);
-        try {
-            const updatedAnnonce = await annonceService.updateAnnonce(slug, data);
-            setAnnonces((prev) => prev.map((a) => (a.slug === slug ? updatedAnnonce : a)));
-            setCurrentAnnonce(updatedAnnonce);
-            return updatedAnnonce;
-        } catch (err: any) {
-            setError(err.message || 'Failed to update annonce');
-            console.error('Failed to update annonce:', err);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const deleteAnnonce = async (slug: string) => {
-        setIsLoading(true);
-        try {
-            await annonceService.deleteAnnonce(slug);
-            setAnnonces((prev) => prev.filter((a) => a.slug !== slug));
-        } catch (err: any) {
-            setError(err.message || 'Failed to delete annonce');
-            console.error('Failed to delete annonce:', err);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const fetchFeed = useCallback(async (page = 1, limit = 20, categoryId?: string, search?: string) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const response = await annonceService.getFeed(page, limit, categoryId, search);
-            if (page === 1) {
-                setAnnonces(response.data || []);
-            } else {
-                setAnnonces((prev) => [...prev, ...(response.data || [])]);
-            }
-            setHasMore(response?.pagination?.hasNextPage || false);
-            return response;
-        } catch (err: any) {
-            const errorMsg = err.message || 'Failed to fetch feed';
-            setError(errorMsg);
-            console.error('Error in fetchFeed:', errorMsg, err);
-            setHasMore(false); // Stop loop on error
-            return null;
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    // Keeping the original structure for compatibility where needed, 
+    // but these functions are now just wrappers around React Query.
+    // Note: Use the specialized hooks below for list/detail fetching for full benefits.
 
     return {
-        annonces,
-        currentAnnonce,
-        isLoading,
-        error,
-        hasMore,
-        fetchAnnoncesByVitrine,
-        fetchAnnonceBySlug,
-        fetchFeed,
-        createAnnonce,
-        updateAnnonce,
-        deleteAnnonce,
+        createAnnonce: createMutation.mutateAsync,
+        updateAnnonce: (slug: string, data: Partial<Annonce>) => updateMutation.mutateAsync({ slug, data }),
+        deleteAnnonce: deleteMutation.mutateAsync,
+        isLoading: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+        // For compatibility, but should be replaced by useAnnonceDetail in screens
+        fetchAnnonceBySlug: (slug: string) => queryClient.fetchQuery({
+            queryKey: annonceKeys.detail(slug),
+            queryFn: () => annonceService.getAnnonceBySlug(slug)
+        }),
+        // For compatibility, will be replaced by useAnnonceFeed and useAnnoncesByVitrine
+        fetchFeed: (page: number, limit: number, categoryId?: string, search?: string) =>
+            annonceService.getFeed(page, limit, categoryId, search),
+        fetchAnnoncesByVitrine: (vitrineSlug: string, page: number, limit: number) =>
+            annonceService.getAnnoncesByVitrine(vitrineSlug, page, limit),
     };
+};
+
+export const useAnnonceFeed = (limit = 20, categoryId?: string | null, search?: string | null) => {
+    return useInfiniteQuery({
+        queryKey: annonceKeys.feed({ categoryId, search, limit }),
+        queryFn: ({ pageParam = 1 }) => annonceService.getFeed(pageParam, limit, categoryId || undefined, search || undefined),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage) => {
+            if (lastPage.pagination?.hasNextPage) {
+                return lastPage.pagination.currentPage + 1;
+            }
+            return undefined;
+        }
+    });
+};
+
+export const useAnnoncesByVitrine = (vitrineSlug: string, limit = 10) => {
+    return useInfiniteQuery({
+        queryKey: annonceKeys.byVitrine(vitrineSlug),
+        queryFn: ({ pageParam = 1 }) => annonceService.getAnnoncesByVitrine(vitrineSlug, pageParam, limit),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage, allPages) => {
+            if (lastPage.length === limit) {
+                return allPages.length + 1;
+            }
+            return undefined;
+        }
+    });
+};
+
+export const useAnnonceDetail = (slug: string) => {
+    return useQuery({
+        queryKey: annonceKeys.detail(slug),
+        queryFn: () => annonceService.getAnnonceBySlug(slug),
+        enabled: !!slug
+    });
 };

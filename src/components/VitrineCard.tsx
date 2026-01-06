@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { useTheme } from '../context/ThemeContext';
 import { Vitrine } from '../types';
 import Avatar from './Avatar';
@@ -35,11 +36,13 @@ export const VitrineCard: React.FC<VitrineCardProps> = ({ vitrine, onPress, vari
         return (
             <TouchableOpacity style={styles.scrollCard} onPress={onPress} activeOpacity={0.8}>
                 {/* Cover Image */}
-                {coverUri ? (
-                    <Image source={{ uri: coverUri }} style={styles.scrollCover} resizeMode="cover" />
-                ) : (
-                    <Image source={DEFAULT_IMAGES.cover} style={styles.scrollCover} resizeMode="cover" />
-                )}
+                <Image
+                    source={coverUri ? coverUri : DEFAULT_IMAGES.cover}
+                    style={styles.scrollCover}
+                    contentFit="cover"
+                    transition={300}
+                    cachePolicy="memory-disk"
+                />
 
                 {/* Avatar positioned over cover */}
                 <View style={styles.scrollAvatarContainer}>

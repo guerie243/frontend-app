@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Image, StyleSheet, Dimensions, Text, TouchableOpacity, Animated, Easing } from 'react-native';
+import { View, StyleSheet, Dimensions, Text, TouchableOpacity, Animated, Easing, Image as RNImage } from 'react-native';
+import { Image } from 'expo-image';
 import { DEFAULT_IMAGES } from '../constants/images';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -80,7 +81,7 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
                             resolve();
                         }, 3000);
 
-                        Image.getSize(
+                        RNImage.getSize(
                             uri,
                             (width, height) => {
                                 clearTimeout(timeoutId);
@@ -113,7 +114,8 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
                 <Image
                     source={DEFAULT_IMAGES.annonce}
                     style={styles.placeholderImage}
-                    resizeMode="contain"
+                    contentFit="contain"
+                    cachePolicy="memory-disk"
                 />
             </TouchableOpacity>
         );
@@ -139,9 +141,11 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
             return (
                 <View style={{ height: finalHeight, width: '100%' }}>
                     <Image
-                        source={failedImages.has(0) ? DEFAULT_IMAGES.annonce : { uri: images[0] }}
+                        source={failedImages.has(0) ? DEFAULT_IMAGES.annonce : images[0]}
                         style={styles.fullImage}
-                        resizeMode="cover"
+                        contentFit="cover"
+                        transition={300}
+                        cachePolicy="memory-disk"
                         onError={() => setFailedImages(prev => new Set(prev).add(0))}
                     />
                 </View>
@@ -156,18 +160,22 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
                 <View style={[styles.row, { height: finalHeight }]}>
                     <View style={{ flex: r1 }}>
                         <Image
-                            source={failedImages.has(0) ? DEFAULT_IMAGES.annonce : { uri: images[0] }}
+                            source={failedImages.has(0) ? DEFAULT_IMAGES.annonce : images[0]}
                             style={styles.fullImage}
-                            resizeMode="cover"
-                            onError={() => setFailedImages(prev => new Set(prev).add(0))}
+                            contentFit="cover"
+                            transition={300}
+                            cachePolicy="memory-disk"
+                            onError={() => setFailedImages((prev: Set<number>) => new Set(prev).add(0))}
                         />
                     </View>
                     <View style={styles.separator} />
                     <View style={{ flex: r2 }}>
                         <Image
-                            source={failedImages.has(1) ? DEFAULT_IMAGES.annonce : { uri: images[1] }}
+                            source={failedImages.has(1) ? DEFAULT_IMAGES.annonce : images[1]}
                             style={styles.fullImage}
-                            resizeMode="cover"
+                            contentFit="cover"
+                            transition={300}
+                            cachePolicy="memory-disk"
                             onError={() => setFailedImages(prev => new Set(prev).add(1))}
                         />
                     </View>
@@ -191,9 +199,11 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
             <View style={{ height: finalHTop + finalHBottom, width: '100%' }}>
                 <View style={{ height: finalHTop }}>
                     <Image
-                        source={failedImages.has(0) ? DEFAULT_IMAGES.annonce : { uri: images[0] }}
+                        source={failedImages.has(0) ? DEFAULT_IMAGES.annonce : images[0]}
                         style={styles.fullImage}
-                        resizeMode="cover"
+                        contentFit="cover"
+                        transition={300}
+                        cachePolicy="memory-disk"
                         onError={() => setFailedImages(prev => new Set(prev).add(0))}
                     />
                 </View>
@@ -201,19 +211,23 @@ export const ProductImageGrid: React.FC<ProductImageGridProps> = ({ images, onPr
                 <View style={[styles.row, { height: finalHBottom }]}>
                     <View style={{ flex: r2 }}>
                         <Image
-                            source={failedImages.has(1) ? DEFAULT_IMAGES.annonce : { uri: images[1] }}
+                            source={failedImages.has(1) ? DEFAULT_IMAGES.annonce : images[1]}
                             style={styles.fullImage}
-                            resizeMode="cover"
+                            contentFit="cover"
+                            transition={300}
+                            cachePolicy="memory-disk"
                             onError={() => setFailedImages(prev => new Set(prev).add(1))}
                         />
                     </View>
                     <View style={styles.separator} />
                     <View style={{ flex: r3 }}>
                         <Image
-                            source={failedImages.has(2) ? DEFAULT_IMAGES.annonce : { uri: images[2] }}
+                            source={failedImages.has(2) ? DEFAULT_IMAGES.annonce : images[2]}
                             style={styles.fullImage}
-                            resizeMode="cover"
-                            onError={() => setFailedImages(prev => new Set(prev).add(2))}
+                            contentFit="cover"
+                            transition={300}
+                            cachePolicy="memory-disk"
+                            onError={() => setFailedImages((prev: Set<number>) => new Set(prev).add(2))}
                         />
                         {hasMore && (
                             <View style={styles.overlay}>

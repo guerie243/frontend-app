@@ -1,14 +1,14 @@
-import React, { useRef, useMemo, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
   Animated,
-  Image,
   TouchableOpacity,
   Dimensions,
   ScrollView,
-  Text // Nécessaire pour les types et Animated.ScrollView
+  Text
 } from 'react-native';
+import { Image } from 'expo-image';
 import { DEFAULT_IMAGES } from '../constants/images';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -63,18 +63,27 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
   }, [normalizedImages.length]);
 
 
-  // Logique de Défilement Automatique
-
-
   // Fonction appelée à la fin d'un défilement manuel
   const handleMomentumScrollEnd = (event: any) => {
     const scrollOffset = event.nativeEvent.contentOffset.x;
 
     // Le calcul de l'index doit être basé sur les offsets pour la précision.
-    // Pour simplifier, on divise par la largeur totale d'un bloc (item + espacement).
     const index = Math.round(scrollOffset / (ITEM_WIDTH + SPACING));
-    setCurrentIndex(index);
+    if (index !== currentIndex) {
+      setCurrentIndex(index);
+
+      // Marquer l'index actuel et le suivant comme "à charger"
+      setLoadedIndices(prev => {
+        const next = new Set(prev);
+        next.add(index);
+        if (index < imageCount - 1) next.add(index + 1);
+        return next;
+      });
+    }
   };
+
+  // État pour suivre les images que l'on a autorisé à charger
+  const [loadedIndices, setLoadedIndices] = useState<Set<number>>(new Set([0, 1]));
 
   if (imageCount === 0) {
     // Rendu du placeholder inchangé
@@ -83,7 +92,8 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
         <Image
           source={DEFAULT_IMAGES.annonce}
           style={{ width: SCREEN_WIDTH, height: '100%' }}
-          resizeMode="contain"
+          contentFit="contain"
+          cachePolicy="memory-disk"
         />
       </Animated.View>
     );
@@ -112,9 +122,16 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
       >
         {normalizedImages.map((image, index) => {
           const imageUri = image.uri;
-          const source = imageErrors.has(index)
-            ? DEFAULT_IMAGES.annonce
-            : { uri: imageUri };
+
+          // --- LOGIQUE LAZY LOADING ---
+          // On ne charge l'image que si elle est dans l'ensemble des indices autorisés (déjà vue ou suivante)
+          const shouldLoad = loadedIndices.has(index);
+
+          // Déterminer la source finale
+          let source: any = null;
+          if (shouldLoad) {
+            source = imageErrors.has(index) ? DEFAULT_IMAGES.annonce : imageUri;
+          }
 
           return (
             // La marge à droite est l'espacement entre les items.
@@ -130,14 +147,26 @@ export const ProductCarousel: React.FC<ProductCarouselProps> = ({ height, images
                 }
               ]}
             >
-              <Image
-                source={source}
-                style={styles.image}
-                resizeMode="contain"
-                onError={() => {
-                  setImageErrors(prev => new Set(prev).add(index));
-                }}
-              />
+              {shouldLoad ? (
+                <Image
+                  source={source}
+                  style={styles.image}
+                  contentFit="contain"
+                  transition={300}
+                  cachePolicy="memory-disk"
+                  onError={() => {
+                    setImageErrors(prev => new Set(prev).add(index));
+                  }}
+                />
+              ) : (
+                <View style={[styles.image, { backgroundColor: '#F0F0F0', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Image
+                    source={DEFAULT_IMAGES.annonce}
+                    style={{ width: 50, height: 50, opacity: 0.1 }}
+                    contentFit="contain"
+                  />
+                </View>
+              )}
             </TouchableOpacity>
           );
         })}

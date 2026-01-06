@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { useTheme } from '../context/ThemeContext';
 import { Annonce } from '../types';
 import { DEFAULT_IMAGES } from '../constants/images';
@@ -42,7 +43,7 @@ export const AnnonceCard: React.FC<AnnonceCardProps> = ({ annonce, onPress }) =>
     const firstImageUri = getFirstImageUri(annonce.images);
 
     // 2. Utilisez une URI de remplacement si aucune n'est trouvée
-    const imageSource = firstImageUri ? { uri: firstImageUri } : DEFAULT_IMAGES.annonce;
+    const imageSource = firstImageUri ? firstImageUri : DEFAULT_IMAGES.annonce;
 
     return (
         <TouchableOpacity
@@ -53,7 +54,9 @@ export const AnnonceCard: React.FC<AnnonceCardProps> = ({ annonce, onPress }) =>
             <Image
                 source={imageSource}
                 style={styles.image}
-                resizeMode="cover"
+                contentFit="cover"
+                transition={300}
+                cachePolicy="memory-disk"
             />
             <View style={styles.content}>
                 <Text style={styles.title} numberOfLines={2}>

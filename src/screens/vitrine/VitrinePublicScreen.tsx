@@ -3,13 +3,13 @@ import {
     View,
     Text,
     StyleSheet,
-    Image,
     TouchableOpacity,
     RefreshControl,
     FlatList,
     ActivityIndicator,
     Dimensions
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useNavigation, useRoute, useIsFocused, useFocusEffect } from '@react-navigation/native';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
 import { GuestPrompt } from '../../components/GuestPrompt';
@@ -138,21 +138,26 @@ export const VitrinePublicScreen = () => {
                 {/* 1.1. Cover Image (Read Only) */}
                 <Image
                     source={getSafeUri(currentVitrine.coverImage || currentVitrine.banner)
-                        ? { uri: getSafeUri(currentVitrine.coverImage || currentVitrine.banner) }
+                        ? getSafeUri(currentVitrine.coverImage || currentVitrine.banner)
                         : DEFAULT_IMAGES.cover
                     }
                     style={styles.coverImage}
-                    resizeMode="cover"
+                    contentFit="cover"
+                    transition={300}
+                    cachePolicy="memory-disk"
                 />
 
                 {/* 1.2. Avatar (Read Only) */}
                 <View style={[styles.avatarSection, { borderColor: theme.colors.surface }]}>
                     <Image
                         source={getSafeUri(currentVitrine.logo || currentVitrine.avatar)
-                            ? { uri: getSafeUri(currentVitrine.logo || currentVitrine.avatar) }
+                            ? getSafeUri(currentVitrine.logo || currentVitrine.avatar)
                             : DEFAULT_IMAGES.avatar
                         }
                         style={[styles.avatar, { borderColor: theme.colors.surface }]}
+                        contentFit="cover"
+                        transition={300}
+                        cachePolicy="memory-disk"
                     />
                 </View>
 

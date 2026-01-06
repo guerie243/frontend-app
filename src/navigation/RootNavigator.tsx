@@ -25,6 +25,17 @@ import { View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { AppLoadingScreen } from '../components/AppLoadingScreen';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Création d'une instance globale de QueryClient
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 1000 * 60 * 5, // Les données sont considérées comme fraîches pendant 5 minutes
+            gcTime: 1000 * 60 * 60 * 24, // Garder en mémoire pendant 24h (si inactif)
+        },
+    },
+});
 
 /**
  * Composant RootNavigator
@@ -52,12 +63,14 @@ export const RootNavigator = () => {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-            <NavigationIndependentTree>
-                <NavigationContainer>
-                    <AppStack />
-                </NavigationContainer>
-            </NavigationIndependentTree>
-        </View>
+        <QueryClientProvider client={queryClient}>
+            <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+                <NavigationIndependentTree>
+                    <NavigationContainer>
+                        <AppStack />
+                    </NavigationContainer>
+                </NavigationIndependentTree>
+            </View>
+        </QueryClientProvider>
     );
 };

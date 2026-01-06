@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { View, Image, StyleSheet, Pressable, Modal, ActivityIndicator, Animated, Easing, Dimensions } from "react-native";
+import { View, StyleSheet, Pressable, Modal, ActivityIndicator, Animated, Easing, Dimensions } from "react-native";
+import { Image } from "expo-image";
 
-const DefaultCover = { uri: "https://pixabay.com/get/g8a9486161b9f6b060a8bdbb9ef78aa63c4bc9a376fd3301222a70221f80aa0b2b7e5f517705b7063455266f7af1f2fdf_1280.jpg" };
+const DefaultCover = "https://pixabay.com/get/g8a9486161b9f6b060a8bdbb9ef78aa63c4bc9a376fd3301222a70221f80aa0b2b7e5f517705b7063455266f7af1f2fdf_1280.jpg";
 
 // Récupérer la largeur de l’écran
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -10,14 +11,20 @@ export default function CoverPhoto({
   height = 120, // hauteur réduite
   source,
   style,
+}: {
+  height?: number;
+  source?: any;
+  style?: any;
 }) {
   const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [scale] = useState(new Animated.Value(0));
 
-  const hasImage = source && source.uri;
+  const imageSource = source?.uri || source || DefaultCover;
+  const hasImage = !!(source?.uri || source);
 
   const openModal = () => {
+    if (!hasImage) return;
     setVisible(true);
     scale.setValue(0);
     Animated.timing(scale, {
@@ -30,7 +37,7 @@ export default function CoverPhoto({
 
   return (
     <>
-      <Pressable onPress={() => hasImage && openModal()}>
+      <Pressable onPress={openModal}>
         <View
           style={[
             {
@@ -43,10 +50,13 @@ export default function CoverPhoto({
           ]}
         >
           <Image
-            source={hasImage ? source : DefaultCover}
-            style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+            source={imageSource}
+            style={{ width: "100%", height: "100%" }}
+            contentFit="cover"
+            transition={300}
+            cachePolicy="memory-disk"
             onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
+            onLoad={() => setLoading(false)}
           />
           {loading && (
             <ActivityIndicator
@@ -61,17 +71,22 @@ export default function CoverPhoto({
       <Modal visible={visible} transparent onRequestClose={() => setVisible(false)}>
         <View style={styles.modalBackground}>
           <Pressable style={styles.closeArea} onPress={() => setVisible(false)} />
-          <Animated.Image
-            source={hasImage ? source : DefaultCover}
+          <Animated.View
             style={[
-              styles.fullImage,
               {
                 width: SCREEN_WIDTH * 0.8,   // modal un peu plus petit que l'écran
                 height: (SCREEN_WIDTH * 0.8) * (height / SCREEN_WIDTH), // ratio conservé
                 transform: [{ scale }],
               },
             ]}
-          />
+          >
+            <Image
+              source={imageSource}
+              style={styles.fullImage}
+              contentFit="contain"
+              cachePolicy="memory-disk"
+            />
+          </Animated.View>
         </View>
       </Modal>
     </>
@@ -86,7 +101,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   fullImage: {
-    resizeMode: "contain",
+    width: "100%",
+    height: "100%",
     borderRadius: 10,
   },
   closeArea: {

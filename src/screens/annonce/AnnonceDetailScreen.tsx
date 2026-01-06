@@ -14,12 +14,12 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
 import { useTheme } from '../../context/ThemeContext';
-import { useAnnonces } from '../../hooks/useAnnonces';
+import { useAnnonces, useAnnonceDetail } from '../../hooks/useAnnonces';
 import { ShareButton } from '../../components/ShareButton';
 import { WhatsAppButton } from '../../components/WhatsAppButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../hooks/useAuth';
-import { useVitrines } from '../../hooks/useVitrines';
+import { useVitrineDetail } from '../../hooks/useVitrines';
 import { ProductCarousel } from '../../components/ProductCarousel';
 import Avatar from '../../components/Avatar';
 import { getRelativeTime } from '../../utils/dateUtils';
@@ -42,13 +42,17 @@ export const AnnonceDetailScreen = () => {
     const route = useRoute();
     const { slug } = route.params as { slug: string };
     const { theme } = useTheme();
-    const { currentAnnonce, fetchAnnonceBySlug, isLoading, deleteAnnonce } = useAnnonces();
-    const { fetchVitrineBySlug } = useVitrines();
+    const { deleteAnnonce } = useAnnonces();
     const { user, isAuthenticated } = useAuth();
     const { showDestructiveConfirm, showError } = useAlertService();
 
+    // --- QUERIES TANSTACK ---
+    const { data: currentAnnonce, isLoading: isAnnonceLoading } = useAnnonceDetail(slug);
+
+    const vitrineIdentifier = currentAnnonce?.vitrineId || currentAnnonce?.vitrineSlug;
+    const { data: vitrineInfo } = useVitrineDetail(vitrineIdentifier || '');
+
     // --- États ---
-    const [vitrineInfo, setVitrineInfo] = useState<any>(null);
     const [currentInfoHeight, setCurrentInfoHeight] = useState(MIN_INFO_HEIGHT);
     const [previewVisible, setPreviewVisible] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
@@ -91,27 +95,6 @@ export const AnnonceDetailScreen = () => {
         })
     ).current;
 
-    // --- Chargement des données ---
-    useEffect(() => {
-        if (slug) {
-            fetchAnnonceBySlug(slug);
-        }
-    }, [slug]);
-
-    useEffect(() => {
-        const loadVitrineData = async () => {
-            const vitrineIdentifier = currentAnnonce?.vitrineId || currentAnnonce?.vitrineSlug;
-            if (vitrineIdentifier) {
-                try {
-                    const data = await fetchVitrineBySlug(vitrineIdentifier);
-                    setVitrineInfo(data);
-                } catch (e) {
-                    console.error("Erreur chargement vitrine", e);
-                }
-            }
-        };
-        if (currentAnnonce) loadVitrineData();
-    }, [currentAnnonce]);
 
     // --- Handlers ---
     const handleEdit = () => {
@@ -156,7 +139,7 @@ export const AnnonceDetailScreen = () => {
     const styles = useMemo(() => createStyles(theme), [theme]);
 
     // --- Rendu Loading / Vide ---
-    if (isLoading && !currentAnnonce) {
+    if (isAnnonceLoading && !currentAnnonce) {
         return <LoadingComponent />;
     }
 
@@ -173,13 +156,6 @@ export const AnnonceDetailScreen = () => {
         );
     }
 
-    // ✅ Logique isOwner Robuste
-    console.log('[AnnonceDetail] Debug Ownership FULL:', {
-        isAuthenticated,
-        userKeys: user ? Object.keys(user) : 'null',
-        userObject: user,
-        annonceOwnerId: currentAnnonce?.ownerId,
-    });
     // Tentative de fallback sur d'autres champs ID possibles
     const currentUserId = user?.userId || user?.id || user?._id || user?.user_id;
     const isOwner = isAuthenticated && user && currentAnnonce && String(currentUserId) === String(currentAnnonce.ownerId);
@@ -280,7 +256,7 @@ export const AnnonceDetailScreen = () => {
                     <View style={styles.separator} />
 
                     {/* B. Identité Vendeur (Seulement pour VISITEUR) */}
-                    {vitrineInfo && (
+                    {vitrineInfo ? (
                         <TouchableOpacity
                             style={styles.sellerCard}
                             onPress={handleGoToVitrine}
@@ -299,6 +275,11 @@ export const AnnonceDetailScreen = () => {
                             </View>
                             <Ionicons name="chevron-forward" size={24} color={theme.colors.textTertiary} />
                         </TouchableOpacity>
+                    ) : (
+                        <View style={styles.sellerCard}>
+                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                            <Text style={[styles.sellerName, { marginLeft: 10 }]}>Chargement vendeur...</Text>
+                        </View>
                     )}
 
                     {/* C. Description */}

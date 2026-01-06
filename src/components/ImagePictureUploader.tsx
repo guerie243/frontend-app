@@ -2,14 +2,13 @@ import React, { useState, useCallback } from 'react';
 import {
     View,
     TouchableOpacity,
-    Image,
     StyleSheet,
     Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import DraggableFlatList from 'react-native-draggable-flatlist';
-import * as Linking from 'expo-linking';
 import { compressImage } from '../utils/imageUploader';
 import { useAlertService } from '../utils/alertService';
 
@@ -91,7 +90,12 @@ export default function ImagePictureUploader({
                 onLongPress={drag}
                 style={styles.imageContainer}
             >
-                <Image source={{ uri: item.uri }} style={styles.image} />
+                <Image
+                    source={item.uri}
+                    style={styles.image}
+                    contentFit="cover"
+                    cachePolicy="memory-disk"
+                />
                 <TouchableOpacity
                     style={styles.removeBtn}
                     onPress={() => removeImage(item.id)}

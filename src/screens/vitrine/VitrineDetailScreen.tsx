@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import {
     View,
     Text,
@@ -11,12 +11,12 @@ import {
     Dimensions,
     Platform
 } from 'react-native';
-import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { ScreenWrapper } from '../../components/ScreenWrapper';
 import { GuestPrompt } from '../../components/GuestPrompt';
 import { CustomButton } from '../../components/CustomButton';
 import { useTheme } from '../../context/ThemeContext';
-import { useVitrines } from '../../hooks/useVitrines';
+import { useVitrines, useVitrineDetail, useMyVitrines } from '../../hooks/useVitrines';
 import { ShareButton } from '../../components/ShareButton';
 import { WhatsAppButton } from '../../components/WhatsAppButton';
 import ImageUploadCover from "../../components/ImageUploadCover";
@@ -25,7 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LoadingComponent } from '../../components/LoadingComponent';
 import { StateMessage } from '../../components/StateMessage';
 import { useAuth } from '../../hooks/useAuth';
-import { useAnnonces } from '../../hooks/useAnnonces';
+import { useAnnoncesByVitrine } from '../../hooks/useAnnonces';
 import { AnnonceCard } from '../../components/AnnonceCard';
 import { ENV } from '../../config/env';
 import { ImagePreviewModal } from '../../components/ImagePreviewModal';
@@ -49,107 +49,67 @@ export const VitrineDetailScreen = () => {
     const route = useRoute<any>();
     const { slug } = route.params || {};
     const { theme } = useTheme();
-    const {
-        fetchVitrineBySlug,
-        updateVitrine,
-        fetchMyVitrines,
-        isLoading: isVitrinesLoading,
-    } = useVitrines();
-
+    const { updateVitrine } = useVitrines();
     const { user, isAuthenticated, isGuest } = useAuth();
-    const { annonces, fetchAnnoncesByVitrine, isLoading: annoncesLoading, hasMore } = useAnnonces();
     const { showSuccess, showError } = useAlertService();
-    const [page, setPage] = useState(1);
-    const [error, setError] = useState<string | null>(null);
-    const [refreshing, setRefreshing] = useState(false);
-    const [displayedVitrine, setDisplayedVitrine] = useState<any>(null);
+
+    // --- QUERIES TANSTACK ---
+    const {
+        data: detailVitrine,
+        isLoading: isDetailLoading,
+        refetch: refetchDetail
+    } = useVitrineDetail(slug || '');
+
+    const {
+        data: myVitrines,
+        isLoading: isMyVitrinesLoading,
+        refetch: refetchMyVitrines
+    } = useMyVitrines();
+
+    const displayedVitrine = slug ? detailVitrine : (myVitrines?.[0] || null);
+
+    const {
+        data: annoncedata,
+        fetchNextPage,
+        hasNextPage,
+        isLoading: annoncesLoading,
+        refetch: refetchAnnonces,
+        isRefetching: isRefreshingAnnonces
+    } = useAnnoncesByVitrine(displayedVitrine?.slug || '', 10);
+
+    const annonces = useMemo(() => {
+        return annoncedata?.pages.flat() || [];
+    }, [annoncedata]);
+
     const [previewImage, setPreviewImage] = useState<{ visible: boolean; url?: string }>({
         visible: false,
         url: undefined
     });
 
-    const styles = React.useMemo(() => createStyles(theme), [theme]);
+    const styles = useMemo(() => createStyles(theme), [theme]);
 
-    // --- Identification du Propriétaire ---
-    // On compare l'ID utilisateur (si connecté) avec l'ownerId de la vitrine
-    // Le user peut avoir `id`, `_id` ou `userId` selon la source.
     const currentUserId = user ? (user.id || user._id || user.userId) : null;
-    // On utilise une comparaison souple (==) pour gérer string vs number
     const isOwner = isAuthenticated && user && displayedVitrine && (currentUserId == displayedVitrine.ownerId || currentUserId == displayedVitrine.owner);
 
     // --- LOGIQUE REFRESH ---
     const onRefresh = useCallback(async () => {
-        setRefreshing(true);
-        try {
-            const targetSlug = slug || displayedVitrine?.slug;
-            if (targetSlug) {
-                const refreshedVitrine = await fetchVitrineBySlug(targetSlug);
-                setDisplayedVitrine(refreshedVitrine);
-                setPage(1);
-                fetchAnnoncesByVitrine(targetSlug, 1, 10);
-            } else if (isAuthenticated && !slug) {
-                // Refresh sans slug = re-fetch my vitrine
-                const myVitrines = await fetchMyVitrines();
-                if (myVitrines && myVitrines.length > 0) {
-                    setDisplayedVitrine(myVitrines[0]);
-                    setPage(1);
-                    fetchAnnoncesByVitrine(myVitrines[0].slug, 1, 10);
-                }
-            }
-        } catch (error) {
-            console.error("Erreur refresh vitrine:", error);
-            setError("Erreur lors du rafraîchissement.");
-        } finally {
-            setRefreshing(false);
-        }
-    }, [slug, displayedVitrine?.slug, fetchVitrineBySlug, fetchAnnoncesByVitrine, isAuthenticated, fetchMyVitrines]);
-
-    // Charger les donées
-    useEffect(() => {
-        const loadVitrine = async () => {
-            if (slug) {
-                // Mode normal : via navigation avec slug
-                const vitrine = await fetchVitrineBySlug(slug);
-                setDisplayedVitrine(vitrine);
-                if (vitrine) {
-                    setPage(1);
-                    // Use ID if available for better reliability, fallback to slug
-                    fetchAnnoncesByVitrine(vitrine.vitrineId || vitrine.slug, 1, 10);
-                }
-            } else if (isAuthenticated) {
-                // Mode "Tab" : pas de slug, on charge la vitrine de l'utilisateur
-                try {
-                    const myVitrines = await fetchMyVitrines();
-                    if (myVitrines && myVitrines.length > 0) {
-                        const myVitrine = myVitrines[0];
-                        setDisplayedVitrine(myVitrine);
-                        setPage(1);
-                        fetchAnnoncesByVitrine(myVitrine.vitrineId || myVitrine.slug, 1, 10);
-                    } else {
-                        // Pas de vitrine
-                        setDisplayedVitrine(null);
-                    }
-                } catch (e) {
-                    console.error("Erreur chargement ma vitrine", e);
-                }
-            }
-        };
-        loadVitrine();
-    }, [slug, isAuthenticated]); // Ajout dépendance isAuthenticated
+        await Promise.all([
+            slug ? refetchDetail() : refetchMyVitrines(),
+            refetchAnnonces()
+        ]);
+    }, [slug, refetchDetail, refetchMyVitrines, refetchAnnonces]);
 
     const loadMoreAnnonces = () => {
-        if (!annoncesLoading && hasMore && displayedVitrine?.slug) {
-            const nextPage = page + 1;
-            setPage(nextPage);
-            fetchAnnoncesByVitrine(displayedVitrine.slug, nextPage, 10);
+        if (!annoncesLoading && hasNextPage) {
+            fetchNextPage();
         }
     };
 
-    // --- Gestion des Uploads (Propriétaire uniquement) ---
+    // --- Gestion des Uploads ---
     const handleAvatarUploadSuccess = async (newImageUrl: string) => {
+        if (!displayedVitrine) return;
         try {
             await updateVitrine(displayedVitrine.slug, { logo: newImageUrl });
-            setDisplayedVitrine((prev: any) => ({ ...prev, logo: newImageUrl }));
             showSuccess('Le logo a été mis à jour !');
         } catch (error) {
             console.error('Erreur mise à jour logo:', error);
@@ -158,9 +118,9 @@ export const VitrineDetailScreen = () => {
     };
 
     const handleCoverUploadSuccess = async (newImageUrl: string) => {
+        if (!displayedVitrine) return;
         try {
             await updateVitrine(displayedVitrine.slug, { coverImage: newImageUrl });
-            setDisplayedVitrine((prev: any) => ({ ...prev, coverImage: newImageUrl }));
             showSuccess('La bannière a été mise à jour !');
         } catch (error) {
             console.error('Erreur mise à jour bannière:', error);
@@ -169,12 +129,12 @@ export const VitrineDetailScreen = () => {
     };
 
     // --- Chargement / Erreurs ---
-    if (isVitrinesLoading && !displayedVitrine) {
+    const isOverallLoading = slug ? isDetailLoading : isMyVitrinesLoading;
+    if (isOverallLoading && !displayedVitrine) {
         return <LoadingComponent />;
     }
 
     if (!displayedVitrine) {
-        // Si c'est un guest sur l'onglet "Ma Vitrine" (pas de slug)
         if (isGuest && !slug) {
             return (
                 <ScreenWrapper>
@@ -187,15 +147,12 @@ export const VitrineDetailScreen = () => {
                     }}>
                         <TouchableOpacity
                             activeOpacity={0.7}
-                            onPress={() => {
-                                console.log('Guest navigating to Settings...');
-                                navigation.navigate('Settings');
-                            }}
+                            onPress={() => navigation.navigate('Settings')}
                             style={{
                                 padding: 8,
                                 borderRadius: 20,
                                 backgroundColor: theme.colors.border + '40',
-                                zIndex: 1000 // Ensure it's on top
+                                zIndex: 1000
                             }}
                         >
                             <Ionicons name="settings-outline" size={24} color={theme.colors.text} />
@@ -234,14 +191,10 @@ export const VitrineDetailScreen = () => {
         `J'aimerais avoir plus d'informations.\n\n` +
         `Lien de la vitrine : ${fullUrl}`;
 
-
-
     const ListHeader = () => (
         <>
-            {/* 1. Cover & Avatar */}
             <View style={styles.coverSection}>
                 {isOwner ? (
-                    // OWNER: Uploaders
                     <ImageUploadCover
                         initialImage={displayedVitrine.coverImage}
                         height={200}
@@ -249,7 +202,6 @@ export const VitrineDetailScreen = () => {
                         onImagePress={(url) => setPreviewImage({ visible: true, url })}
                     />
                 ) : (
-                    // VISITOR: Simple Image (Decreased height by 1/4: 200 -> 150)
                     <TouchableOpacity
                         activeOpacity={0.9}
                         onPress={() => {
@@ -273,7 +225,6 @@ export const VitrineDetailScreen = () => {
                     !isOwner && { bottom: -60 }
                 ]}>
                     {isOwner ? (
-                        // OWNER: Avatar Uploader
                         <ImageUploadAvatar
                             initialImage={displayedVitrine.logo}
                             size={100}
@@ -281,7 +232,6 @@ export const VitrineDetailScreen = () => {
                             onImagePress={(url) => setPreviewImage({ visible: true, url })}
                         />
                     ) : (
-                        // VISITOR: Simple Avatar (Increased size: 80 -> 120)
                         <TouchableOpacity
                             activeOpacity={0.9}
                             onPress={() => {
@@ -300,16 +250,11 @@ export const VitrineDetailScreen = () => {
                     )}
                 </View>
 
-                {/* 1.3. Header Actions */}
                 <View style={[styles.floatingHeader, { justifyContent: 'flex-end' }]}>
-                    {/* OWNER ONLY: Settings Button */}
                     {isOwner && (
                         <TouchableOpacity
                             activeOpacity={0.7}
-                            onPress={() => {
-                                console.log('Navigating to Settings...');
-                                navigation.navigate('Settings');
-                            }}
+                            onPress={() => navigation.navigate('Settings')}
                             style={styles.actionButton}
                         >
                             <Ionicons name="settings-outline" size={24} color={theme.colors.white} />
@@ -318,7 +263,6 @@ export const VitrineDetailScreen = () => {
                 </View>
             </View>
 
-            {/* 2. Bloc Info */}
             <View style={styles.infoBlock}>
                 <Text style={styles.title}>{currentVitrine.name}</Text>
                 <Text style={styles.category}>
@@ -341,7 +285,6 @@ export const VitrineDetailScreen = () => {
 
                 <View style={styles.separator} />
 
-                {/* Contact Info */}
                 {(currentVitrine.address || currentVitrine.contact?.email || currentVitrine.contact?.phone) && (
                     <View style={styles.contactDetailsSection}>
                         <Text style={styles.sectionTitle}>Infos </Text>
@@ -376,17 +319,14 @@ export const VitrineDetailScreen = () => {
                     </View>
                 )}
 
-                {/* Actions Principales (Différenciées Owner/Visitor) */}
                 <View style={styles.mainActionsContainer}>
                     {isOwner ? (
-                        // --- OWNER ACTIONS ---
                         <>
                             <CustomButton
                                 title="Gérer ma Vitrine"
                                 onPress={() => navigation.navigate('VitrineModificationMain')}
                                 style={styles.ownerActionButton}
                             />
-                            {/* ShareButton Owner */}
                             <View style={styles.shareRectButton}>
                                 <ShareButton
                                     pagePath={pagePath}
@@ -399,7 +339,6 @@ export const VitrineDetailScreen = () => {
                             </View>
                         </>
                     ) : (
-                        // --- VISITOR ACTIONS ---
                         <>
                             {currentVitrine.contact?.phone ? (
                                 <WhatsAppButton
@@ -428,7 +367,6 @@ export const VitrineDetailScreen = () => {
                 </View>
             </View>
 
-            {/* 3. Produits Header */}
             <View style={styles.productsHeader}>
                 <Text style={styles.productsTitle}>Annonces ({annonces.length})</Text>
             </View>
@@ -443,7 +381,6 @@ export const VitrineDetailScreen = () => {
                     <View style={{ width: (SCREEN_WIDTH / 2) - 24, marginBottom: 16 }}>
                         <AnnonceCard
                             annonce={item}
-                            // Important : on passe le slug de l'annonce pour la navigation
                             onPress={() => navigation.push('AnnonceDetail', { slug: item.slug })}
                         />
                     </View>
@@ -478,16 +415,9 @@ export const VitrineDetailScreen = () => {
                 onEndReached={loadMoreAnnonces}
                 onEndReachedThreshold={0.5}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+                    <RefreshControl refreshing={isRefreshingAnnonces} onRefresh={onRefresh} colors={[theme.colors.primary]} />
                 }
             />
-            {/* Prompt pour Guests si ce n'est pas le proprio et qu'ils sont invités */}
-            {isGuest && (
-                <View style={styles.guestPromptContainer}>
-                    {/* Message enlevé selon demande utilisateur */}
-                </View>
-            )}
-
             <ImagePreviewModal
                 visible={previewImage.visible}
                 imageUrl={previewImage.url}
@@ -627,7 +557,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     ownerActionButton: {
         flex: 1.5,
         marginRight: 12,
-        marginVertical: 0, // Override CustomButton default
+        marginVertical: 0,
     },
     visitorActionButton: {
         flex: 1,
@@ -675,8 +605,7 @@ const createStyles = (theme: any) => StyleSheet.create({
         width: '100%',
         color: theme.colors.textSecondary,
     },
-    guestPromptContainer: {
-        padding: 16
-    }
 });
+
+export default VitrineDetailScreen;
 

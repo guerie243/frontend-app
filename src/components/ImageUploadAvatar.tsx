@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
     TouchableOpacity,
     View,
-    Image,
     StyleSheet,
     ActivityIndicator,
     Modal,
@@ -10,9 +9,9 @@ import {
     Easing,
     Pressable,
     ViewStyle,
-    StyleProp,
     FlexAlignType
 } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
 import { compressImage } from '../utils/imageUploader';
@@ -117,9 +116,11 @@ const ImageUploadAvatar = ({
                         <ActivityIndicator size="small" color="#000" />
                     ) : (
                         <Image
-                            source={imageUri ? { uri: imageUri } : DefaultAvatar}
+                            source={imageUri ? imageUri : DefaultAvatar}
                             style={imageStyle}
-                            resizeMode="cover"
+                            contentFit="cover"
+                            transition={300}
+                            cachePolicy="memory-disk"
                         />
                     )}
                 </Pressable>
@@ -143,18 +144,24 @@ const ImageUploadAvatar = ({
             <Modal visible={modalVisible} transparent onRequestClose={() => setModalVisible(false)}>
                 <View style={styles.modalBackground}>
                     <Pressable style={styles.closeArea} onPress={() => setModalVisible(false)} />
-                    <Animated.Image
-                        source={imageUri ? { uri: imageUri } : DefaultAvatar}
+                    <Animated.View
                         style={[
-                            styles.fullImage,
                             {
                                 width: size * 3,
                                 height: size * 3,
                                 borderRadius: 10,
                                 transform: [{ scale }],
+                                overflow: 'hidden'
                             },
                         ]}
-                    />
+                    >
+                        <Image
+                            source={imageUri ? imageUri : DefaultAvatar}
+                            style={styles.fullImage}
+                            contentFit="contain"
+                            cachePolicy="memory-disk"
+                        />
+                    </Animated.View>
                 </View>
             </Modal>
         </>
@@ -186,7 +193,8 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     fullImage: {
-        resizeMode: "contain",
+        width: "100%",
+        height: "100%",
     },
     closeArea: {
         position: "absolute",

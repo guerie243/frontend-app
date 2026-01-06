@@ -1,153 +1,77 @@
-import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { vitrineService } from '../services/vitrineService';
 import { Vitrine } from '../types';
 
+export const vitrineKeys = {
+    all: ['vitrines'] as const,
+    mine: () => [...vitrineKeys.all, 'mine'] as const,
+    details: () => [...vitrineKeys.all, 'detail'] as const,
+    detail: (slug: string) => [...vitrineKeys.details(), slug] as const,
+    lists: () => [...vitrineKeys.all, 'list'] as const,
+    list: (filters: any) => [...vitrineKeys.lists(), filters] as const,
+};
+
 export const useVitrines = () => {
-    const [vitrines, setVitrines] = useState<Vitrine[]>([]);
-    const [currentVitrine, setCurrentVitrine] = useState<Vitrine | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const queryClient = useQueryClient();
 
-    const fetchMyVitrines = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await vitrineService.getAllOwnerVitrines();
-            setVitrines(data);
-            if (data.length > 0) {
-                setCurrentVitrine(prev => prev || data[0]);
-            } else {
-                setCurrentVitrine(null);
-            }
-            return data;
-        } catch (err: any) {
-            const errorMsg = err.message || 'Failed to fetch vitrines';
-            setError(errorMsg);
-            console.error('Error in fetchMyVitrines:', errorMsg, err);
-            return [];
-        } finally {
-            setIsLoading(false);
+    const createMutation = useMutation({
+        mutationFn: (data: Partial<Vitrine>) => vitrineService.createVitrine(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: vitrineKeys.all });
         }
-    }, []);
+    });
 
-    const fetchVitrineBySlug = useCallback(async (slug: string) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await vitrineService.getVitrineBySlug(slug);
-            setCurrentVitrine(data);
-            // Mettre à jour aussi dans la liste si elle existe
-            setVitrines(prevVitrines => {
-                const index = prevVitrines.findIndex(v => v.slug === slug);
-                if (index !== -1) {
-                    const updated = [...prevVitrines];
-                    updated[index] = data;
-                    return updated;
-                }
-                return prevVitrines;
-            });
-            return data;
-        } catch (err: any) {
-            const errorMsg = err.message || 'Failed to fetch vitrine';
-            setError(errorMsg);
-            console.error('Error in fetchVitrineBySlug:', errorMsg, err);
-            return null;
-        } finally {
-            setIsLoading(false);
+    const updateMutation = useMutation({
+        mutationFn: ({ slug, updates }: { slug: string; updates: Partial<Vitrine> }) =>
+            vitrineService.updateVitrine(slug, updates),
+        onSuccess: (updatedVitrine) => {
+            queryClient.invalidateQueries({ queryKey: vitrineKeys.all });
+            queryClient.setQueryData(vitrineKeys.detail(updatedVitrine.slug), updatedVitrine);
         }
-    }, []);
+    });
 
-    const createVitrine = useCallback(async (data: Partial<Vitrine>) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const newVitrine = await vitrineService.createVitrine(data);
-            setVitrines(prev => [newVitrine, ...prev]);
-            setCurrentVitrine(newVitrine);
-            return newVitrine;
-        } catch (err: any) {
-            const errorMsg = err.message || 'Failed to create vitrine';
-            setError(errorMsg);
-            console.error('Error in createVitrine:', errorMsg, err);
-            throw err;
-        } finally {
-            setIsLoading(false);
+    const deleteMutation = useMutation({
+        mutationFn: (slug: string) => vitrineService.deleteVitrine(slug),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: vitrineKeys.all });
         }
-    }, []);
+    });
 
-    const updateVitrine = useCallback(async (slug: string, updates: Partial<Vitrine>) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            console.log('Updating vitrine with:', { slug, updates });
-            const updatedVitrine = await vitrineService.updateVitrine(slug, updates);
-
-            // Récupérer le nouveau slug si il a changé
-            const newSlug = updatedVitrine.slug;
-            const slugChanged = newSlug !== slug;
-
-            // Mise à jour de la liste des vitrines
-            setVitrines(prevVitrines => {
-                if (slugChanged) {
-                    // Si le slug a changé, remplacer l'ancienne entrée par la nouvelle
-                    return prevVitrines.map(v =>
-                        v.slug === slug ? updatedVitrine : v
-                    );
-                } else {
-                    // Sinon, mettre à jour normalement
-                    return prevVitrines.map(v =>
-                        v.slug === slug ? updatedVitrine : v
-                    );
-                }
-            });
-
-            // Mise à jour de la vitrine courante
-            setCurrentVitrine(prev => {
-                if (prev?.slug === slug || prev?.slug === newSlug) {
-                    return updatedVitrine;
-                }
-                return prev;
-            });
-
-            console.log('Vitrine updated successfully:', updatedVitrine);
-            return updatedVitrine;
-        } catch (err: any) {
-            const errorMsg = err.message || 'Failed to update vitrine';
-            console.error('Error in updateVitrine:', errorMsg, err);
-            setError(errorMsg);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    const deleteVitrine = useCallback(async (slug: string) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            await vitrineService.deleteVitrine(slug);
-            setVitrines(prev => prev.filter(v => v.slug !== slug));
-            setCurrentVitrine(prev => prev?.slug === slug ? null : prev);
-            return true;
-        } catch (err: any) {
-            const errorMsg = err.message || 'Failed to delete vitrine';
-            setError(errorMsg);
-            console.error('Error in deleteVitrine:', errorMsg, err);
-            throw err;
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
+    // Compatibility layer
     return {
-        vitrines,
-        currentVitrine,
-        isLoading,
-        error,
-        fetchMyVitrines,
-        fetchVitrineBySlug,
-        createVitrine,
-        updateVitrine,
-        deleteVitrine,
+        createVitrine: createMutation.mutateAsync,
+        updateVitrine: (slug: string, updates: Partial<Vitrine>) => updateMutation.mutateAsync({ slug, updates }),
+        deleteVitrine: deleteMutation.mutateAsync,
+        isLoading: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+        fetchMyVitrines: () => queryClient.fetchQuery({
+            queryKey: vitrineKeys.mine(),
+            queryFn: () => vitrineService.getAllOwnerVitrines()
+        }),
+        fetchVitrineBySlug: (slug: string) => queryClient.fetchQuery({
+            queryKey: vitrineKeys.detail(slug),
+            queryFn: () => vitrineService.getVitrineBySlug(slug)
+        }),
     };
+};
+
+export const useMyVitrines = () => {
+    return useQuery({
+        queryKey: vitrineKeys.mine(),
+        queryFn: () => vitrineService.getAllOwnerVitrines()
+    });
+};
+
+export const useVitrineDetail = (slug: string) => {
+    return useQuery({
+        queryKey: vitrineKeys.detail(slug),
+        queryFn: () => vitrineService.getVitrineBySlug(slug),
+        enabled: !!slug
+    });
+};
+
+export const useAllVitrines = (page = 1, limit = 10, categoryId?: string, search?: string) => {
+    return useQuery({
+        queryKey: vitrineKeys.list({ page, limit, categoryId, search }),
+        queryFn: () => vitrineService.getAllVitrines(page, limit, categoryId, search)
+    });
 };
