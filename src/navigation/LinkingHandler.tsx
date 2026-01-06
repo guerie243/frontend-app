@@ -30,41 +30,45 @@ export const LinkingHandler = () => {
         lastHandledUrl.current = currentUrl;
 
         const handleDeepLink = (rawUrl: string) => {
-            console.log('[LinkingHandler] URL détectée :', rawUrl);
+            console.log('[LinkingHandler] URL brute détectée :', rawUrl);
 
             let path = '';
+            let queryParams: Record<string, string> = {};
 
             if (Platform.OS === 'web') {
-                // Sur le Web, on utilise directement le pathname pour éviter les erreurs de parsing de schéma
+                // Sur le Web, on utilise directement window.location
                 path = window.location.pathname;
+                const searchParams = new URLSearchParams(window.location.search);
+                searchParams.forEach((value, key) => {
+                    queryParams[key] = value;
+                });
             } else {
                 // Sur Mobile, on utilise Linking.parse d'Expo
                 const parsed = Linking.parse(rawUrl);
                 path = parsed.path || '';
+                queryParams = (parsed.queryParams as Record<string, string>) || {};
             }
-
-            if (!path || path === '/') return;
 
             // Nettoyage : enlever les slashes de début et de fin
             const cleanPath = path.replace(/^\/+/, '').replace(/\/+$/, '');
             console.log('[LinkingHandler] Path nettoyé :', cleanPath);
+            console.log('[LinkingHandler] Query Params :', queryParams);
 
-            // Délai plus important pour s'assurer que le StackNavigator est prêt après le Splash
-            // On passe de 100ms à 300ms pour plus de sécurité sur Web
+            if (!cleanPath || cleanPath === '/') return;
+
+            // Délai pour s'assurer que le StackNavigator est prêt après le Splash
             setTimeout(() => {
                 try {
-                    // 1. Détection d'Annonce (a/slug ou /a/slug)
-                    if (cleanPath.startsWith('a/')) {
+                    // 1. Détection d'Annonce
+                    // Formats supportés : /a/slug, /AnnonceDetail?slug=slug
+                    if (cleanPath.startsWith('a/') || cleanPath === 'AnnonceDetail') {
                         const segments = cleanPath.split('/');
-                        let slug = segments[1]; // Prend ce qui suit 'a/'
+                        let slug = queryParams.slug || queryParams.annonceSlug || segments[1];
 
                         if (slug) {
                             slug = decodeURIComponent(slug).split('?')[0];
-                            console.log('[LinkingHandler] Navigation forcée vers AnnonceDetail :', slug);
+                            console.log('[LinkingHandler] Routing vers AnnonceDetail slug:', slug);
 
-                            // Utilisation de reset pour s'assurer que l'on écrase l'état initial (MainTabs)
-                            // et qu'on évite les doubles redirections bizarres sur Web.
-                            // On garde MainTabs en dessous pour que le bouton retour fonctionne.
                             navigation.reset({
                                 index: 1,
                                 routes: [
@@ -75,14 +79,15 @@ export const LinkingHandler = () => {
                         }
                     }
 
-                    // 2. Détection de Vitrine (v/slug ou /v/slug)
-                    else if (cleanPath.startsWith('v/')) {
+                    // 2. Détection de Vitrine
+                    // Formats supportés : /v/slug, /VitrineDetail?slug=slug
+                    else if (cleanPath.startsWith('v/') || cleanPath === 'VitrineDetail') {
                         const segments = cleanPath.split('/');
-                        let slug = segments[1];
+                        let slug = queryParams.slug || queryParams.vitrineSlug || segments[1];
 
                         if (slug) {
                             slug = decodeURIComponent(slug).split('?')[0];
-                            console.log('[LinkingHandler] Navigation forcée vers VitrineDetail :', slug);
+                            console.log('[LinkingHandler] Routing vers VitrineDetail slug:', slug);
 
                             navigation.reset({
                                 index: 1,
@@ -97,9 +102,14 @@ export const LinkingHandler = () => {
                     // 3. Autres routes simples
                     else {
                         const simplePage = cleanPath.split('?')[0];
+                        console.log('[LinkingHandler] Tentative de navigation simple vers :', simplePage);
                         if (simplePage === 'login') navigation.navigate('Login');
                         else if (simplePage === 'register') navigation.navigate('Register');
                         else if (simplePage === 'settings') navigation.navigate('Settings');
+                        else if (simplePage === 'AnnonceModificationMain') {
+                            const slug = queryParams.slug || queryParams.annonceSlug;
+                            if (slug) navigation.navigate('AnnonceModificationMain', { annonceSlug: slug });
+                        }
                     }
                 } catch (error) {
                     console.error('[LinkingHandler] Erreur lors de la navigation :', error);
