@@ -65,9 +65,7 @@ export const RootNavigator = () => {
     return (
         <QueryClientProvider client={queryClient}>
             <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-                <NavigationContainer>
-                    <AppStack />
-                </NavigationContainer>
+                <AppStack />
             </View>
         </QueryClientProvider>
     );
