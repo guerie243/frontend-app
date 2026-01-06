@@ -1,43 +1,42 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import { CategoryAnnonce } from '../Data/vitrinecategorys';
 
 // Taille par défaut du composant (largeur/hauteur)
 const DEFAULT_PILL_SIZE = 100;
 
 // Ratio par défaut de l'image (l'image fera 75% de la taille totale du composant)
-const DEFAULT_IMAGE_RATIO = 0.75;
+const DEFAULT_ICON_RATIO = 0.4;
 
 interface CategoryPillProps {
     name: string;
     slug: string;
-    imageUri: string;
+    iconName: keyof typeof Ionicons.glyphMap;
     isSelected: boolean;
     onPress: (categorySlug: string) => void;
     style?: any;
     size?: number;
-    imageRatio?: number;
+    iconRatio?: number;
 }
 
 export const CategoryPill: React.FC<CategoryPillProps> = ({
     name,
     slug,
-    imageUri,
+    iconName,
     isSelected,
     onPress,
     style,
     size = DEFAULT_PILL_SIZE,
-    imageRatio = DEFAULT_IMAGE_RATIO
+    iconRatio = DEFAULT_ICON_RATIO
 }) => {
     const { theme } = useTheme();
     const styles = React.useMemo(() => createStyles(theme), [theme]);
 
-    const actualImageRatio = Math.min(1.0, Math.max(0.1, imageRatio));
+    const actualIconRatio = Math.min(1.0, Math.max(0.1, iconRatio));
     const pillSize = size;
-    const imageSize = pillSize * actualImageRatio;
-    const borderRadius = imageSize / 2;
+    const iconSize = pillSize * actualIconRatio;
+    const borderRadius = pillSize / 2; // Make container round or use icon shape? Keeping container round.
 
     // Styles dynamiques combinés avec useMemo pour la performance
     const dynamicPropsStyles = StyleSheet.create({
@@ -46,13 +45,9 @@ export const CategoryPill: React.FC<CategoryPillProps> = ({
             height: pillSize,
         },
         imageContainer: {
-            width: imageSize,
-            height: imageSize,
-            borderRadius: borderRadius,
-        },
-        image: {
-            width: imageSize,
-            height: imageSize,
+            width: pillSize * 0.7, // Adjust container size relative to pill
+            height: pillSize * 0.7,
+            borderRadius: (pillSize * 0.7) / 2,
         },
     });
 
@@ -64,6 +59,9 @@ export const CategoryPill: React.FC<CategoryPillProps> = ({
         ? { color: theme.colors.primary, fontWeight: '700' }
         : { color: theme.colors.textSecondary };
 
+    // Icon color logic
+    const iconColor = isSelected ? theme.colors.primary : theme.colors.textSecondary;
+
     return (
         <TouchableOpacity
             style={[styles.basePillContainer, dynamicPropsStyles.pillContainer, pillStyle, style]}
@@ -71,12 +69,10 @@ export const CategoryPill: React.FC<CategoryPillProps> = ({
             activeOpacity={0.7}
         >
             <View style={[styles.baseImageContainer, dynamicPropsStyles.imageContainer]}>
-                <Image
-                    source={imageUri}
-                    style={dynamicPropsStyles.image}
-                    contentFit="cover"
-                    transition={300}
-                    cachePolicy="memory-disk"
+                <Ionicons
+                    name={iconName}
+                    size={iconSize}
+                    color={iconColor}
                 />
             </View>
             <Text style={[styles.nameText, textStyle]}>{name}</Text>

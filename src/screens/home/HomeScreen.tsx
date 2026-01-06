@@ -273,7 +273,7 @@ export const HomeScreen = () => {
                         <CategoryPill
                             name={category.name}
                             slug={category.slug}
-                            imageUri={category.imageUri}
+                            iconName={category.iconName}
                             isSelected={selectedCategory === category.slug}
                             onPress={filterByCategory}
                         />
