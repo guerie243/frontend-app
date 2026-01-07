@@ -21,7 +21,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { AppStack } from './AppStack';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { AppLoadingScreen } from '../components/AppLoadingScreen';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
@@ -36,6 +36,50 @@ const queryClient = new QueryClient({
         },
     },
 });
+
+/**
+ * Configuration de Deep Linking pour React Navigation
+ * Cette configuration agit comme un fallback au LinkingHandler
+ */
+const linking = {
+    prefixes: [
+        'andyapp://',
+        'https://andyrdc.vercel.app',
+        'https://andy.com',
+        ...(Platform.OS === 'web' ? [
+            typeof window !== 'undefined' ? window.location.origin : ''
+        ].filter(Boolean) : [])
+    ],
+    config: {
+        screens: {
+            MainTabs: {
+                path: '', // Route racine
+                screens: {
+                    Home: 'home',
+                    Explore: 'explore',
+                    MyVitrine: 'my-vitrine',
+                    Profile: 'profile',
+                },
+            },
+            // Routes directes pour deep linking
+            AnnonceDetail: {
+                path: 'a/:slug',
+                parse: {
+                    slug: (slug: string) => decodeURIComponent(slug),
+                },
+            },
+            VitrineDetail: {
+                path: 'v/:slug',
+                parse: {
+                    slug: (slug: string) => decodeURIComponent(slug),
+                },
+            },
+            Login: 'login',
+            Register: 'register',
+            Settings: 'settings',
+        },
+    },
+};
 
 /**
  * Composant RootNavigator
@@ -65,7 +109,17 @@ export const RootNavigator = () => {
     return (
         <QueryClientProvider client={queryClient}>
             <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-                <AppStack />
+                <NavigationIndependentTree>
+                    <NavigationContainer
+                        linking={linking}
+                        fallback={<AppLoadingScreen />}
+                        onReady={() => {
+                            console.log('[RootNavigator] Navigation prête avec deep linking configuré');
+                        }}
+                    >
+                        <AppStack />
+                    </NavigationContainer>
+                </NavigationIndependentTree>
             </View>
         </QueryClientProvider>
     );

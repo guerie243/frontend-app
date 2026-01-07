@@ -6,39 +6,43 @@ import { Platform } from 'react-native';
 /**
  * LinkingHandler
  * 
- * Ce composant écoute les changements d'URL (Deep Linking / Web)
- * et redirige manuellement le Stack de navigation de React Navigation.
+ * Gère la navigation profonde (Deep Linking) pour l'application.
+ * Intercepte les URLs et navigue vers les bonnes pages pour les vitrines et annonces.
  * 
- * Il résout le conflit entre Expo Router (qui possède le conteneur racine)
- * et notre stack manuel de navigation.
+ * Patterns supportés:
+ * - /a/{slug} -> AnnonceDetail
+ * - /v/{slug} -> VitrineDetail
+ * - /login, /register, /settings -> Écrans respectifs
  */
 export const LinkingHandler = () => {
     const navigation = useNavigation<any>();
     const url = Linking.useURL();
-    const hasHandledInitialUrl = useRef(false);
+    const processedUrls = useRef<Set<string>>(new Set());
 
     useEffect(() => {
-        // Source de vérité brute pour l'URL
+        // Déterminer l'URL courante selon la plateforme
         let currentUrl = url;
 
         if (Platform.OS === 'web') {
             currentUrl = window.location.href;
         }
 
-        if (!currentUrl || hasHandledInitialUrl.current) return;
+        // Ne rien faire si pas d'URL
+        if (!currentUrl) return;
 
-        // On évite de retraiter si l'URL contient déjà nos marqueurs de navigation interne (ex: /MainTabs)
-        // car cela signifie que React Navigation est déjà en train de synchroniser l'URL.
-        if (currentUrl.includes('/MainTabs') || currentUrl.includes('AnnonceDetail') || currentUrl.includes('VitrineDetail')) {
+        // Éviter le double traitement de la même URL
+        if (processedUrls.current.has(currentUrl)) {
+            console.log('[LinkingHandler] URL déjà traitée, skip:', currentUrl);
             return;
         }
 
-        const handleDeepLink = (rawUrl: string) => {
-            console.log('[LinkingHandler] URL brute détectée :', rawUrl);
+        console.log('[LinkingHandler] 🔗 URL détectée:', currentUrl);
 
+        const handleDeepLink = (rawUrl: string) => {
             let path = '';
             let queryParams: Record<string, string> = {};
 
+            // Extraire le chemin et les paramètres selon la plateforme
             if (Platform.OS === 'web') {
                 path = window.location.pathname;
                 const searchParams = new URLSearchParams(window.location.search);
@@ -49,23 +53,44 @@ export const LinkingHandler = () => {
                 queryParams = (parsed.queryParams as Record<string, string>) || {};
             }
 
+            // Nettoyer le chemin
             const cleanPath = path.replace(/^\/+/, '').replace(/\/+$/, '');
-            if (!cleanPath || cleanPath === '/') return;
 
-            console.log('[LinkingHandler] Processing path:', cleanPath);
+            // Ignorer les chemins vides ou racine
+            if (!cleanPath || cleanPath === '/') {
+                console.log('[LinkingHandler] Chemin vide ou racine, skip');
+                return;
+            }
 
+            // Ignorer si le chemin contient déjà des marqueurs de navigation interne
+            // MAIS seulement si ce sont des chemins complets (pas juste /a/ ou /v/)
+            if (cleanPath.includes('MainTabs/') || cleanPath === 'MainTabs') {
+                console.log('[LinkingHandler] Navigation interne détectée, skip:', cleanPath);
+                return;
+            }
+
+            console.log('[LinkingHandler] 📍 Traitement du chemin:', cleanPath);
+            console.log('[LinkingHandler] 📦 Paramètres query:', queryParams);
+
+            // Délai minimal pour s'assurer que le stack de navigation est prêt
             setTimeout(() => {
                 try {
                     let handled = false;
 
-                    // 1. Détection d'Annonce (/a/slug ou /AnnonceDetail)
-                    if (cleanPath.startsWith('a/') || cleanPath === 'AnnonceDetail') {
-                        const segments = cleanPath.split('/');
-                        let slug = queryParams.slug || queryParams.annonceSlug || segments[1];
+                    // 1. DÉTECTION D'ANNONCE: /a/{slug}
+                    if (cleanPath.startsWith('a/')) {
+                        const segments = cleanPath.split('/').filter(s => s); // Filtrer les segments vides
+                        let slug = segments[1]; // segments[0] = 'a', segments[1] = slug
+
+                        // Fallback sur les query params si pas de slug dans le path
+                        if (!slug) {
+                            slug = queryParams.slug || queryParams.annonceSlug;
+                        }
 
                         if (slug) {
-                            slug = decodeURIComponent(slug).split('?')[0];
-                            console.log('[LinkingHandler] Routing vers AnnonceDetail :', slug);
+                            // Nettoyer le slug (enlever query params éventuels)
+                            slug = decodeURIComponent(slug).split('?')[0].split('#')[0];
+                            console.log('[LinkingHandler] ✅ Navigation vers AnnonceDetail:', slug);
 
                             navigation.reset({
                                 index: 1,
@@ -75,18 +100,24 @@ export const LinkingHandler = () => {
                                 ],
                             });
                             handled = true;
+                        } else {
+                            console.warn('[LinkingHandler] ⚠️ Slug d\'annonce non trouvé dans:', cleanPath);
                         }
                     }
 
-                    // 2. Détection de Vitrine (/v/slug ou /VitrineDetail)
-                    else if (cleanPath.startsWith('v/') || cleanPath === 'VitrineDetail') {
-                        const segments = cleanPath.split('/');
-                        let slug = queryParams.slug || queryParams.vitrineSlug || segments[1];
+                    // 2. DÉTECTION DE VITRINE: /v/{slug}
+                    else if (cleanPath.startsWith('v/')) {
+                        const segments = cleanPath.split('/').filter(s => s);
+                        let slug = segments[1]; // segments[0] = 'v', segments[1] = slug
+
+                        // Fallback sur les query params
+                        if (!slug) {
+                            slug = queryParams.slug || queryParams.vitrineSlug;
+                        }
 
                         if (slug) {
-                            // Nettoyage du slug et gestion des IDs potentiels
-                            slug = decodeURIComponent(slug).split('?')[0];
-                            console.log('[LinkingHandler] Routing vers VitrineDetail avec slug/id :', slug);
+                            slug = decodeURIComponent(slug).split('?')[0].split('#')[0];
+                            console.log('[LinkingHandler] ✅ Navigation vers VitrineDetail:', slug);
 
                             navigation.reset({
                                 index: 1,
@@ -96,25 +127,38 @@ export const LinkingHandler = () => {
                                 ],
                             });
                             handled = true;
+                        } else {
+                            console.warn('[LinkingHandler] ⚠️ Slug de vitrine non trouvé dans:', cleanPath);
                         }
                     }
 
-                    // 3. Autres routes
+                    // 3. AUTRES ROUTES (login, register, settings, etc.)
                     else {
-                        const simplePage = cleanPath.split('?')[0];
-                        if (['login', 'register', 'settings'].includes(simplePage)) {
-                            navigation.navigate(simplePage.charAt(0).toUpperCase() + simplePage.slice(1));
+                        const simplePage = cleanPath.split('/')[0].toLowerCase();
+                        const routeMap: Record<string, string> = {
+                            'login': 'Login',
+                            'register': 'Register',
+                            'settings': 'Settings',
+                        };
+
+                        if (routeMap[simplePage]) {
+                            console.log('[LinkingHandler] ✅ Navigation vers:', routeMap[simplePage]);
+                            navigation.navigate(routeMap[simplePage]);
                             handled = true;
                         }
                     }
 
                     if (handled) {
-                        hasHandledInitialUrl.current = true;
+                        // Marquer cette URL comme traitée
+                        processedUrls.current.add(rawUrl);
+                        console.log('[LinkingHandler] ✨ Navigation réussie');
+                    } else {
+                        console.log('[LinkingHandler] ℹ️ Aucune route correspondante pour:', cleanPath);
                     }
                 } catch (error) {
-                    console.error('[LinkingHandler] Erreur de navigation :', error);
+                    console.error('[LinkingHandler] ❌ Erreur de navigation:', error);
                 }
-            }, 500); // Délai accru pour laisser le temps au Stack d'être prêt
+            }, 100); // Réduit à 100ms pour une navigation plus rapide
         };
 
         handleDeepLink(currentUrl);
