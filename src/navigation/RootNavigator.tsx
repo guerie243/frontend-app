@@ -24,6 +24,7 @@ import { AppStack } from './AppStack';
 import { View, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { AppLoadingScreen } from '../components/AppLoadingScreen';
+import { LoadingComponent } from '../components/LoadingComponent';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -112,7 +113,7 @@ export const RootNavigator = () => {
                 <NavigationIndependentTree>
                     <NavigationContainer
                         linking={linking}
-                        fallback={<AppLoadingScreen />}
+                        fallback={<LoadingComponent />}
                         onReady={() => {
                             console.log('[RootNavigator] Navigation prête avec deep linking configuré');
                         }}
