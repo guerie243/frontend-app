@@ -1,73 +1,71 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, StatusBar, useWindowDimensions, Image } from 'react-native';
-import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withRepeat,
-    withSequence,
-    withTiming,
-    Easing
-} from 'react-native-reanimated';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, StatusBar, Image, Animated, Easing } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 
 /**
- * LOGO_ASSET - Utilisation directe de l'asset source
+ * LOGO_ASSET - Import direct
  */
 const LOGO_ASSET = require('../../assets/images/logo_andy.png');
 
 /**
- * StartupSplash
- * 
- * Écran de démarrage PREMIUM.
- * Affiche UNIQUEMENT le logo Andy au centre avec une animation de pulsation.
+ * StartupSplash - Version Ultra-Robuste
  */
 export const StartupSplash = () => {
-    const { width } = useWindowDimensions();
-
-    // Animation constants
-    const scale = useSharedValue(1);
-    const logoSize = Math.min(width * 0.65, 250); // Légèrement plus grand
+    const [scale] = useState(new Animated.Value(1));
+    const [visible, setVisible] = useState(false);
 
     useEffect(() => {
-        // 1. On cache le splash natif après un court délai pour laisser au JS le temps de s'afficher
-        const timer = setTimeout(() => {
-            SplashScreen.hideAsync().catch(() => { });
-        }, 250); // 250ms est idéal pour éviter le flash blanc tout en étant réactif
+        console.log('[StartupSplash] Montage du composant');
 
-        // 2. Animation de pulsation continue (très fluide et lente)
-        scale.value = withRepeat(
-            withSequence(
-                withTiming(1.05, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
-                withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.sin) })
-            ),
-            -1,
-            true
+        // 1. On affiche le logo JS tout de suite
+        setVisible(true);
+
+        // 2. On attend un peu avant de cacher le splash natif pour éviter le "trou" blanc
+        const timerHide = setTimeout(() => {
+            console.log('[StartupSplash] Effacement du splash natif');
+            SplashScreen.hideAsync().catch(() => { });
+        }, 500);
+
+        // 3. Animation de pulsation avec Animated de base (plus léger au boot)
+        const pulse = Animated.loop(
+            Animated.sequence([
+                Animated.timing(scale, {
+                    toValue: 1.08,
+                    duration: 1500,
+                    easing: Easing.inOut(Easing.sin),
+                    useNativeDriver: true,
+                }),
+                Animated.timing(scale, {
+                    toValue: 1,
+                    duration: 1500,
+                    easing: Easing.inOut(Easing.sin),
+                    useNativeDriver: true,
+                }),
+            ])
         );
 
-        return () => clearTimeout(timer);
-    }, []);
+        pulse.start();
 
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-    }));
+        return () => {
+            clearTimeout(timerHide);
+            pulse.stop();
+        };
+    }, []);
 
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-            <Animated.View style={[styles.contentGroup, animatedStyle]}>
-                <View style={[styles.logoContainer, { width: logoSize, height: logoSize }]}>
+            <Animated.View style={{ transform: [{ scale }] }}>
+                <View style={styles.logoWrapper}>
                     <Image
                         source={LOGO_ASSET}
                         style={styles.logo}
                         resizeMode="contain"
+                        onLoad={() => console.log('[StartupSplash] Image chargée !')}
+                        onError={(e) => console.error('[StartupSplash] Erreur image:', e.nativeEvent.error)}
                     />
                 </View>
-
-                {/* 
-                   On supprime le loader qui "cache" le logo ou distrait l'utilisateur.
-                   L'animation de pulsation suffit pour montrer que ça charge.
-                */}
             </Animated.View>
         </View>
     );
@@ -78,13 +76,11 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF', // Fond blanc pur pour matcher le splash natif
+        backgroundColor: '#FFFFFF', // Doit matcher à 100% le splash natif
     },
-    contentGroup: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    logoContainer: {
+    logoWrapper: {
+        width: 240, // Taille fixe sécurisée
+        height: 240,
         justifyContent: 'center',
         alignItems: 'center',
     },
