@@ -104,11 +104,11 @@ export const RootNavigator = () => {
             return;
         }
 
-        // Force l'affichage du splash screen pendant au moins 1.5 secondes au démarrage initial
+        // Force l'affichage du splash screen pendant au moins 3 secondes au démarrage initial
         const timer = setTimeout(() => {
             setIsSplashTiming(false);
             hasShownSplashSession = true;
-        }, 1500);
+        }, 3000);
         return () => clearTimeout(timer);
     }, []);
 

@@ -22,9 +22,8 @@ export default function RootLayout() {
     const error = null;
 
     useEffect(() => {
-        if (loaded || error) {
-            SplashScreen.hideAsync();
-        }
+        // Le SplashScreen n'est plus caché ici. 
+        // Il sera caché par le composant StartupSplash pour une transition fluide.
     }, [loaded, error]);
 
     if (!loaded && !error) {

@@ -10,6 +10,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 
+import * as SplashScreen from 'expo-splash-screen';
+
 const { width } = Dimensions.get('window');
 
 /**
@@ -20,23 +22,28 @@ const { width } = Dimensions.get('window');
  */
 export const StartupSplash = () => {
     // Animation constants
-    const scale = useSharedValue(1); // Start at scale 1 for immediate visibility
-    const opacity = useSharedValue(1); // Start at opacity 1 to avoid delay
+    const scale = useSharedValue(0.8); // Start slightly smaller for a "pop" effect
+    const opacity = useSharedValue(0); // Start invisible to fade in over native splash
 
     useEffect(() => {
-        // Continuous pulse effect
-        const timeout = setTimeout(() => {
-            scale.value = withRepeat(
-                withSequence(
-                    withTiming(1.1, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
-                    withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.sin) })
-                ),
-                -1,
-                true
-            );
-        }, 200); // Start pulse almost immediately
+        // 1. On cache le splash natif dès que le composant JS est monté
+        SplashScreen.hideAsync().catch(() => { });
 
-        return () => clearTimeout(timeout);
+        // 2. Animation d'entrée : Fade in + Scale up
+        opacity.value = withTiming(1, { duration: 600 });
+        scale.value = withTiming(1, { duration: 600 }, (finished) => {
+            if (finished) {
+                // 3. Effet de pulsation continue après l'entrée
+                scale.value = withRepeat(
+                    withSequence(
+                        withTiming(1.08, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
+                        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sin) })
+                    ),
+                    -1,
+                    true
+                );
+            }
+        });
     }, []);
 
     const animatedStyle = useAnimatedStyle(() => ({
