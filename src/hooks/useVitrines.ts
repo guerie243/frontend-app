@@ -14,6 +14,13 @@ export const vitrineKeys = {
 export const useVitrines = () => {
     const queryClient = useQueryClient();
 
+    // Query pour les vitrines de l'utilisateur (utilisée reactivement par bcp d'écrans)
+    const myVitrinesQuery = useQuery({
+        queryKey: vitrineKeys.mine(),
+        queryFn: () => vitrineService.getAllOwnerVitrines(),
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+
     const createMutation = useMutation({
         mutationFn: (data: Partial<Vitrine>) => vitrineService.createVitrine(data),
         onSuccess: () => {
@@ -39,10 +46,19 @@ export const useVitrines = () => {
 
     // Compatibility layer
     return {
+        // État de la query (Data & Error)
+        vitrines: myVitrinesQuery.data,
+        error: myVitrinesQuery.error ? (myVitrinesQuery.error as any).message : null,
+
+        // Mutations
         createVitrine: createMutation.mutateAsync,
         updateVitrine: (slug: string, updates: Partial<Vitrine>) => updateMutation.mutateAsync({ slug, updates }),
         deleteVitrine: deleteMutation.mutateAsync,
-        isLoading: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+
+        // États combinés
+        isLoading: myVitrinesQuery.isLoading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+
+        // Fonctions de fetch (Impératif)
         fetchMyVitrines: () => queryClient.fetchQuery({
             queryKey: vitrineKeys.mine(),
             queryFn: () => vitrineService.getAllOwnerVitrines()
