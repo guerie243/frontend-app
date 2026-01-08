@@ -99,13 +99,16 @@ export const RootNavigator = () => {
     const [isSplashTiming, setIsSplashTiming] = useState(!hasShownSplashSession);
 
     useEffect(() => {
-        if (hasShownSplashSession) return;
+        if (hasShownSplashSession) {
+            setIsSplashTiming(false);
+            return;
+        }
 
-        // Force l'affichage du splash screen pendant au moins 2 secondes au démarrage initial
+        // Force l'affichage du splash screen pendant au moins 1.5 secondes au démarrage initial
         const timer = setTimeout(() => {
             setIsSplashTiming(false);
             hasShownSplashSession = true;
-        }, 2000);
+        }, 1500);
         return () => clearTimeout(timer);
     }, []);
 

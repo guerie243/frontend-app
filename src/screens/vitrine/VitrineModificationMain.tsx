@@ -61,7 +61,7 @@ export const VitrineModificationMain = () => {
                     phone: vitrines[0].contact?.phone,
                     email: vitrines[0].contact?.email
                 });
-            } else if (vitrines.length === 0 && !hookError) {
+            } else if (vitrines && vitrines.length === 0 && !hookError) {
                 // Afficher l'erreur seulement si le chargement est terminé et qu'il n'y a pas d'erreur du hook
                 setVitrine(null);
                 setError("Aucune vitrine trouvée");

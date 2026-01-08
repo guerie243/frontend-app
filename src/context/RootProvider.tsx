@@ -11,7 +11,7 @@ import { Asset } from 'expo-asset';
 import { Image } from 'expo-image';
 
 // Pre-load the logo asset
-const LOGO_ASSET = require('../assets/images/logo_andy.png');
+const LOGO_ASSET = require('../../assets/images/logo_andy.png');
 
 const RootBackground: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { theme } = useTheme();
