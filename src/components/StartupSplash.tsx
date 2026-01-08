@@ -47,19 +47,26 @@ export const StartupSplash = () => {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-            <Animated.View style={[styles.logoContainer, animatedStyle]}>
-                <Image
-                    source={require('../../assets/images/logo_andy.png')}
-                    style={[styles.logo, { borderRadius: 45 }]}
-                    contentFit="contain"
-                    priority="high" // Assure que le logo est téléchargé en priorité
+
+            {/* On groupe le logo et l'indicateur dans le même conteneur animé
+                pour qu'ils apparaissent exactement en même temps */}
+            <Animated.View style={[styles.contentGroup, animatedStyle]}>
+                <View style={styles.logoContainer}>
+                    <Image
+                        source={require('../../assets/images/logo_andy.png')}
+                        style={styles.logo}
+                        contentFit="contain"
+                        priority="high"
+                        cachePolicy="memory-disk"
+                    />
+                </View>
+
+                <ActivityIndicator
+                    color="#0A84FF"
+                    style={styles.loader}
+                    size="small"
                 />
             </Animated.View>
-            <ActivityIndicator
-                color="#0A84FF"
-                style={styles.loader}
-                size="small"
-            />
         </View>
     );
 };
@@ -71,11 +78,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#FFFFFF',
     },
+    contentGroup: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     logoContainer: {
         width: width * 0.55,
         height: width * 0.55,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 45,
         // Premium shadow
         shadowColor: "#000",
         shadowOffset: {
@@ -85,15 +98,14 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 20,
         elevation: 10,
-        borderRadius: 45,
     },
     logo: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#FFFFFF',
+        borderRadius: 45,
     },
     loader: {
-        marginTop: 40,
+        marginTop: 50, // Bien en dessous de l'image
     },
 });
 
