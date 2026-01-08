@@ -11,7 +11,7 @@ export const vitrineKeys = {
     list: (filters: any) => [...vitrineKeys.lists(), filters] as const,
 };
 
-export const useVitrines = () => {
+export const useVitrines = (options?: { enabled?: boolean }) => {
     const queryClient = useQueryClient();
 
     // Query pour les vitrines de l'utilisateur (utilisée reactivement par bcp d'écrans)
@@ -19,6 +19,7 @@ export const useVitrines = () => {
         queryKey: vitrineKeys.mine(),
         queryFn: () => vitrineService.getAllOwnerVitrines(),
         staleTime: 1000 * 60 * 5, // 5 minutes
+        ...options
     });
 
     const createMutation = useMutation({
@@ -31,9 +32,9 @@ export const useVitrines = () => {
     const updateMutation = useMutation({
         mutationFn: ({ slug, updates }: { slug: string; updates: Partial<Vitrine> }) =>
             vitrineService.updateVitrine(slug, updates),
-        onSuccess: (updatedVitrine) => {
+        onSuccess: (updatedAnnonce) => {
             queryClient.invalidateQueries({ queryKey: vitrineKeys.all });
-            queryClient.setQueryData(vitrineKeys.detail(updatedVitrine.slug), updatedVitrine);
+            queryClient.setQueryData(vitrineKeys.detail(updatedAnnonce.slug), updatedAnnonce);
         }
     });
 
@@ -56,7 +57,8 @@ export const useVitrines = () => {
         deleteVitrine: deleteMutation.mutateAsync,
 
         // États combinés
-        isLoading: myVitrinesQuery.isLoading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+        // Si la query est désactivée, on ne considère pas qu'on est en chargement "bloquant"
+        isLoading: (myVitrinesQuery.fetchStatus === 'fetching' && myVitrinesQuery.isLoading) || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
 
         // Fonctions de fetch (Impératif)
         fetchMyVitrines: () => queryClient.fetchQuery({
@@ -70,10 +72,11 @@ export const useVitrines = () => {
     };
 };
 
-export const useMyVitrines = () => {
+export const useMyVitrines = (options?: { enabled?: boolean }) => {
     return useQuery({
         queryKey: vitrineKeys.mine(),
-        queryFn: () => vitrineService.getAllOwnerVitrines()
+        queryFn: () => vitrineService.getAllOwnerVitrines(),
+        ...options
     });
 };
 

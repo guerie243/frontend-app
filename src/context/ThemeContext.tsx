@@ -25,7 +25,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const systemScheme = useColorScheme();
-    const [themeType, setThemeType] = useState<ThemeType>('dark');
+    const [themeType, setThemeType] = useState<ThemeType>('light');
 
     useEffect(() => {
         const loadTheme = async () => {
@@ -33,8 +33,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 const storedTheme = await storage.getItem('appTheme');
                 if (storedTheme === 'light' || storedTheme === 'dark') {
                     setThemeType(storedTheme);
-                } else if (systemScheme) {
-
+                } else if (systemScheme && systemScheme !== 'light') {
+                    // Si on veut forcer le clair par défaut même si le système est sombre, 
+                    // on peut laisser 'light' par défaut. Sinon on suit le système :
+                    // setThemeType(systemScheme); 
                 }
             } catch (error) {
                 console.error('Failed to load theme', error);
@@ -42,7 +44,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
         loadTheme();
     }, [systemScheme]);
-    // Définition du composant `ThemeProvider`. Initialisation de l'état du thème à 'dark'.
+    // Définition du composant `ThemeProvider`. Initialisation de l'état du thème à 'light'.
     // `useEffect` au montage : Tente de charger le thème stocké depuis SecureStore pour assurer la persistance.
 
     const toggleTheme = async () => {

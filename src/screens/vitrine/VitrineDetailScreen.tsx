@@ -63,8 +63,11 @@ export const VitrineDetailScreen = () => {
     const {
         data: myVitrines,
         isLoading: isMyVitrinesLoading,
-        refetch: refetchMyVitrines
-    } = useMyVitrines();
+        refetch: refetchMyVitrines,
+        status: myVitrinesStatus
+    } = useMyVitrines({
+        enabled: isAuthenticated && !slug
+    });
 
     const displayedVitrine = slug ? detailVitrine : (myVitrines?.[0] || null);
 
@@ -134,7 +137,13 @@ export const VitrineDetailScreen = () => {
     };
 
     // --- Chargement / Erreurs ---
-    const isOverallLoading = slug ? isDetailLoading : isMyVitrinesLoading;
+    // Si on a un slug, on attend le detail.
+    // Si pas de slug, on attend myVitrines de l'utilisateur connecté.
+    // Mais si on est GUEST et pas de slug -> Pas de chargement, on veut voir le GuestPrompt direct.
+    const isOverallLoading = slug
+        ? isDetailLoading
+        : (isAuthenticated ? isMyVitrinesLoading : false);
+
     if (isOverallLoading && !displayedVitrine) {
         return <LoadingComponent />;
     }
@@ -184,7 +193,7 @@ export const VitrineDetailScreen = () => {
 
     const currentVitrine = displayedVitrine;
     const pagePath = `v/${currentVitrine.slug}`;
-    const fullUrl = `${ENV.SHARE_BASE_URL}/${pagePath}`;
+    const fullUrl = ENV.SHARE_BASE_URL ? `${ENV.SHARE_BASE_URL}/${pagePath}` : 'Lien non disponible';
 
     const shareData = {
         title: `Vitrine de ${currentVitrine.name}`,

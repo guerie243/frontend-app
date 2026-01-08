@@ -42,20 +42,26 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
     // Default color if none provided
     const iconColor = color || theme.colors.textSecondary;
 
-    const fullUrl = `${ENV.SHARE_BASE_URL}/${pagePath || ''}`;
+    const fullUrl = ENV.SHARE_BASE_URL ? `${ENV.SHARE_BASE_URL}/${pagePath || ''}` : null;
 
     // --- Fonction Unique : Copier le lien ---
     const handleCopyLink = () => {
+        if (!ENV.SHARE_BASE_URL) {
+            showError('Lien non disponible.');
+            return;
+        }
+
         if (!pagePath) {
             showError('Le lien n\'est pas disponible.');
             return;
         }
 
         // Exécute la copie
-        copyToClipboard(fullUrl);
-
-        // Affiche un toast pour un meilleur UX
-        showToast('Lien copié dans le presse-papiers');
+        if (fullUrl) {
+            copyToClipboard(fullUrl);
+            // Affiche un toast pour un meilleur UX
+            showToast('Lien copié dans le presse-papiers');
+        }
     };
 
 

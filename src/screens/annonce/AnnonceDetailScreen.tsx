@@ -164,7 +164,7 @@ export const AnnonceDetailScreen = () => {
 
     // ✅ Création des données structurées pour le ShareButton
     const pagePath = `a/${currentAnnonce.slug}`;
-    const fullUrl = `${ENV.SHARE_BASE_URL}/${pagePath}`;
+    const fullUrl = ENV.SHARE_BASE_URL ? `${ENV.SHARE_BASE_URL}/${pagePath}` : 'Lien non disponible';
 
     const shareData = {
         title: currentAnnonce.title,

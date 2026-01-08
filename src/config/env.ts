@@ -24,7 +24,7 @@ const envSchema = z.object({
     /**
      * URL de base pour la génération de liens de partage.
      */
-    SHARE_BASE_URL: z.string().url().default('https://andy.com'),
+    SHARE_BASE_URL: z.string().url().optional(),
 });
 
 /**
@@ -50,7 +50,7 @@ export const ENV = parsedEnv.success ? parsedEnv.data : {
     API_URL: 'https://backend-app-3fyc.onrender.com',
     APP_URL: 'https://backend-app-3fyc.onrender.com',
     STORAGE_URL: 'https://backend-app-3fyc.onrender.com',
-    SHARE_BASE_URL: 'https://andy.com',
+    SHARE_BASE_URL: undefined as string | undefined,
 };
 
 export type EnvConfig = z.infer<typeof envSchema>;
