@@ -82,28 +82,36 @@ const linking = {
     },
 };
 
+// État global hors du composant pour persister malgré les re-mounts de React Navigation/Expo Router
+let hasShownSplashSession = false;
+
 /**
  * Composant RootNavigator
  * 
- * Responsabilité : Afficher l'écran de démarrage premium (StartupSplash),
+ * Responsabilité : Afficher l'écran de démarrage premium (StartupSplash) UNIQUEMENT au premier chargement,
  * puis basculer vers l'application complète. 
  */
 export const RootNavigator = () => {
     const { isLoading: isAuthLoading } = useAuth();
     const { theme } = useTheme();
-    const [isSplashTiming, setIsSplashTiming] = useState(true);
+
+    // Si nous avons déjà montré le splash dans cette session, on ne le remontre plus
+    const [isSplashTiming, setIsSplashTiming] = useState(!hasShownSplashSession);
 
     useEffect(() => {
-        // Force l'affichage du splash screen pendant au moins 2 secondes
+        if (hasShownSplashSession) return;
+
+        // Force l'affichage du splash screen pendant au moins 2 secondes au démarrage initial
         const timer = setTimeout(() => {
             setIsSplashTiming(false);
+            hasShownSplashSession = true;
         }, 2000);
         return () => clearTimeout(timer);
     }, []);
 
     // Affichage de l'écran de démarrage premium (Avec Logo)
-    // uniquement au démarrage initial et pendant l'auth initiale
-    if (isAuthLoading || isSplashTiming) {
+    // uniquement au TOUT PREMIER démarrage de la session
+    if (!hasShownSplashSession && (isAuthLoading || isSplashTiming)) {
         return <StartupSplash />;
     }
 

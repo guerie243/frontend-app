@@ -20,25 +20,21 @@ const { width } = Dimensions.get('window');
  */
 export const StartupSplash = () => {
     // Animation constants
-    const scale = useSharedValue(0.9);
-    const opacity = useSharedValue(0);
+    const scale = useSharedValue(1); // Start at scale 1 for immediate visibility
+    const opacity = useSharedValue(1); // Start at opacity 1 to avoid delay
 
     useEffect(() => {
-        // Initial fade in and scale
-        opacity.value = withTiming(1, { duration: 800 });
-        scale.value = withTiming(1, { duration: 800, easing: Easing.out(Easing.back(1.5)) });
-
         // Continuous pulse effect
         const timeout = setTimeout(() => {
             scale.value = withRepeat(
                 withSequence(
-                    withTiming(1.05, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
+                    withTiming(1.1, { duration: 1500, easing: Easing.inOut(Easing.sin) }),
                     withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.sin) })
                 ),
                 -1,
                 true
             );
-        }, 800);
+        }, 200); // Start pulse almost immediately
 
         return () => clearTimeout(timeout);
     }, []);
@@ -56,7 +52,6 @@ export const StartupSplash = () => {
                     source={require('../../assets/images/logo_andy.png')}
                     style={[styles.logo, { borderRadius: 45 }]}
                     contentFit="contain"
-                    transition={500}
                     priority="high" // Assure que le logo est téléchargé en priorité
                 />
             </Animated.View>
