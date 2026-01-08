@@ -9,15 +9,16 @@ import Animated, {
     Easing
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
-import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
-import { ScreenWrapper } from './ScreenWrapper';
-
-export const AppLoadingScreen = () => {
-    const { theme } = useTheme();
-
+/**
+ * StartupSplash
+ * 
+ * Écran de démarrage dédié au chargement initial de l'application.
+ * Affiche le logo Andy avec une animation de pulsation et un indicateur de chargement.
+ */
+export const StartupSplash = () => {
     // Animation constants
     const scale = useSharedValue(0.9);
     const opacity = useSharedValue(0);
@@ -56,6 +57,7 @@ export const AppLoadingScreen = () => {
                     style={[styles.logo, { borderRadius: 45 }]}
                     contentFit="contain"
                     transition={500}
+                    priority="high" // Assure que le logo est téléchargé en priorité
                 />
             </Animated.View>
             <ActivityIndicator
@@ -93,11 +95,11 @@ const styles = StyleSheet.create({
     logo: {
         width: '100%',
         height: '100%',
-        backgroundColor: '#FFFFFF', // Ensure white background for the logo itself
+        backgroundColor: '#FFFFFF',
     },
     loader: {
         marginTop: 40,
     },
 });
 
-export default AppLoadingScreen;
+export default StartupSplash;

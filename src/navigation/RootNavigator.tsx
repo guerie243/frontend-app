@@ -23,7 +23,7 @@ import { useAuth } from '../hooks/useAuth';
 import { AppStack } from './AppStack';
 import { View, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import { AppLoadingScreen } from '../components/AppLoadingScreen';
+import { StartupSplash } from '../components/StartupSplash';
 import { LoadingComponent } from '../components/LoadingComponent';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -85,8 +85,8 @@ const linking = {
 /**
  * Composant RootNavigator
  * 
- * Responsabilité : Afficher l'écran de chargement (Splash) au démarrage,
- * puis basculer vers l'application complète.
+ * Responsabilité : Afficher l'écran de démarrage premium (StartupSplash),
+ * puis basculer vers l'application complète. 
  */
 export const RootNavigator = () => {
     const { isLoading: isAuthLoading } = useAuth();
@@ -101,10 +101,10 @@ export const RootNavigator = () => {
         return () => clearTimeout(timer);
     }, []);
 
-    // Affichage de l'écran de chargement premium (Andy Logo)
-    // pendant la vérification initiale ET pendant le délai de 2 secondes
+    // Affichage de l'écran de démarrage premium (Avec Logo)
+    // uniquement au démarrage initial et pendant l'auth initiale
     if (isAuthLoading || isSplashTiming) {
-        return <AppLoadingScreen />;
+        return <StartupSplash />;
     }
 
     return (
