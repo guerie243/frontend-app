@@ -22,17 +22,17 @@ const carouselImages = [
     {
         id: '1',
         source: promo1,
-        title: 'Nouvelle Offre Exclusive !',
+        title: 'Bienvenue sur Andy!',
     },
     {
         id: '2',
         source: promo2,
-        title: 'Découvrez notre dernière fonctionnalité.',
+        title: '',
     },
     {
         id: '3',
         source: promo3,
-        title: 'Téléchargez l\'application dès maintenant.',
+        title: '',
     },
 ];
 //
