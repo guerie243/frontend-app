@@ -13,9 +13,9 @@ import { Image } from 'expo-image';
 // 🎯 OÙ IMPORTER LA LISTE D'IMAGES (Début)
 // 
 // Assurez-vous que ces chemins sont corrects pour votre projet.
-import promo1 from '../../assets/images/promo1.jpeg';
-import promo2 from '../../assets/images/promo2.jpeg';
-import promo3 from '../../assets/images/promo3.jpeg';
+import promo1 from '../../assets/images/promo1.png';
+import promo2 from '../../assets/images/promo2.png';
+import promo3 from '../../assets/images/promo3.png';
 
 // 2. Créez votre tableau de données avec les références d'importation :
 const carouselImages = [
